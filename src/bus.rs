@@ -1,6 +1,6 @@
 use crate::memory::Ram;
 
-struct Bus {
+pub(crate) struct Bus {
     ram: Ram,
     last_read: u8
 }

@@ -1,0 +1,15 @@
+pub(super) enum AddressingMode {
+    ZeroPage,
+    ZeroPageX,
+    ZeroPageY,
+    Absolute,
+    AbsoluteX,
+    AbsoluteY,
+    Indirect,
+    IndirectX,
+    IndirectY,
+    Implicit,
+    Accumulator,
+    Immediate,
+    Relative,
+}
