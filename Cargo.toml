@@ -1,5 +1,5 @@
 [package]
-name = "rustendo"
+name = "rustendulator"
 version = "0.1.0"
 edition = "2024"
 
