@@ -1,3 +1,5 @@
+use rustendo::Nes;
+
 fn main() {
-    println!("Hello, world!");
+    let nes = Nes::new();
 }

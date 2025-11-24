@@ -35,7 +35,7 @@ const NEGATIVE_MASK: u8 = 0b1000_0000;
 
 impl CpuRegisters {
     // Initialized to post reset state
-    fn new() -> Self {
+    pub(super) fn new() -> Self {
         Self {
             accumulator: 0,
             index_x: 0,

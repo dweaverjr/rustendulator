@@ -6,14 +6,21 @@ pub(crate) struct Bus {
 }
 
 impl Bus {
+    pub(crate) fn new() -> Self {
+        Self {
+            ram: Ram::new(),
+            last_read: 0,
+        }
+    }
+
     fn read(&self, address: u16) -> u8 {
         match address {
             0x0000..=0x1FFF => self.ram.read(address), // RAM
-            0x2000..=0x3FFF => unimplemented!(), // PPU Registers
-            0x4000..=0x4013 | 0x4015 => unimplemented!(), // APU
-            0x4016 => unimplemented!(), // Controller 1
-            0x4017 => unimplemented!(), // Controller 2
-            0x4020..=0xFFFF => unimplemented!(), // Cartridge
+            0x2000..=0x3FFF => todo!(), // PPU Registers
+            0x4000..=0x4013 | 0x4015 => todo!(), // APU
+            0x4016 => todo!(), // Controller 1
+            0x4017 => todo!(), // Controller 2
+            0x4020..=0xFFFF => todo!(), // Cartridge
             _ => self.last_read, // Open Bus
         }
     }
@@ -21,11 +28,11 @@ impl Bus {
     fn write(&mut self, address: u16, value: u8) {
         match address {
             0x0000..=0x1FFF => self.ram.write(address, value), // RAM
-            0x2000..=0x3FFF => unimplemented!(), // PPU Registers
-            0x4000..=0x4013 | 0x4015 | 0x4017 => unimplemented!(), // APU
-            0x4014 => unimplemented!(), // OAM DMA
-            0x4016 => unimplemented!(), // Controller Strobe
-            0x4020..=0xFFFF => unimplemented!(), // Cartridge
+            0x2000..=0x3FFF => todo!(), // PPU Registers
+            0x4000..=0x4013 | 0x4015 | 0x4017 => todo!(), // APU
+            0x4014 => todo!(), // OAM DMA
+            0x4016 => todo!(), // Controller Strobe
+            0x4020..=0xFFFF => todo!(), // Cartridge
             _ => {} // Open Bus
          }
     }
