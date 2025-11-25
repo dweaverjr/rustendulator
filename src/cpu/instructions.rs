@@ -32,4 +32,36 @@ impl Cpu {
     pub(super) fn anc(&mut self) {
         todo!("ANC not implemented yet")
     }
+
+    pub(super) fn bpl(&mut self) {
+        todo!("BPL not implemented yet")
+    }
+
+    pub(super) fn clc(&mut self) {
+        todo!("CLC not implemented yet")
+    }
+
+    pub(super) fn jsr(&mut self) {
+        todo!("JSR not implemented yet")
+    }
+
+    pub(super) fn and(&mut self) {
+        todo!("AND not implemented yet")
+    }
+
+    pub(super) fn rla(&mut self) {
+        todo!("RLA not implemented yet")
+    }
+
+    pub(super) fn bit(&mut self) {
+        todo!("BIT not implemented yet")
+    }
+
+    pub(super) fn rol(&mut self) {
+        todo!("ROL not implemented yet")
+    }
+
+    pub(super) fn plp(&mut self) {
+        todo!("PLP not implemented yet")
+    }
 }
