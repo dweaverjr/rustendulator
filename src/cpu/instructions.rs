@@ -140,4 +140,88 @@ impl Cpu {
     pub(super) fn sei(&mut self) {
         todo!("SEI not implemented yet")
     }
+
+    pub(super) fn sta(&mut self) {
+        todo!("STA not implemented yet")
+    }
+
+    pub(super) fn sax(&mut self) {
+        todo!("SAX not implemented yet")
+    }
+
+    pub(super) fn sty(&mut self) {
+        todo!("STY not implemented yet")
+    }
+
+    pub(super) fn stx(&mut self) {
+        todo!("STX not implemented yet")
+    }
+
+    pub(super) fn dey(&mut self) {
+        todo!("DEY not implemented yet")
+    }
+
+    pub(super) fn txa(&mut self) {
+        todo!("TXA not implemented yet")
+    }
+
+    pub(super) fn xaa(&mut self) {
+        todo!("XAA not implemented yet")
+    }
+
+    pub(super) fn bcc(&mut self) {
+        todo!("BCC not implemented yet")
+    }
+
+    pub(super) fn ahx(&mut self) {
+        todo!("AHX not implemented yet")
+    }
+
+    pub(super) fn tya(&mut self) {
+        todo!("TYA not implemented yet")
+    }
+
+    pub(super) fn txs(&mut self) {
+        todo!("TXS not implemented yet")
+    }
+
+    pub(super) fn tas(&mut self) {
+        todo!("TAS not implemented yet")
+    }
+
+    pub(super) fn shy(&mut self) {
+        todo!("SHY not implemented yet")
+    }
+
+    pub(super) fn shx(&mut self) {
+        todo!("SHX not implemented yet")
+    }
+
+    pub(super) fn ldy(&mut self) {
+        todo!("LDY not implemented yet")
+    }
+
+    pub(super) fn lda(&mut self) {
+        todo!("LDA not implemented yet")
+    }
+
+    pub(super) fn ldx(&mut self) {
+        todo!("LDX not implemented yet")
+    }
+
+    pub(super) fn lax(&mut self) {
+        todo!("LAX not implemented yet")
+    }
+
+    pub(super) fn tay(&mut self) {
+        todo!("TAY not implemented yet")
+    }
+
+    pub(super) fn tax(&mut self) {
+        todo!("TAX not implemented yet")
+    }
+
+    pub(super) fn bcs(&mut self) {
+        todo!("BCS not implemented yet")
+    }
 }
