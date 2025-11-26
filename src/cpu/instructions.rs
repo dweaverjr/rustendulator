@@ -224,4 +224,48 @@ impl Cpu {
     pub(super) fn bcs(&mut self) {
         todo!("BCS not implemented yet")
     }
+
+    pub(super) fn clv(&mut self) {
+        todo!("CLV not implemented yet")
+    }
+
+    pub(super) fn tsx(&mut self) {
+        todo!("TSX not implemented yet")
+    }
+
+    pub(super) fn las(&mut self) {
+        todo!("LAS not implemented yet")
+    }
+
+    pub(super) fn cpy(&mut self) {
+        todo!("CPY not implemented yet")
+    }
+
+    pub(super) fn cmp(&mut self) {
+        todo!("CMP not implemented yet")
+    }
+
+    pub(super) fn dcp(&mut self) {
+        todo!("DCP not implemented yet")
+    }
+
+    pub(super) fn dec(&mut self) {
+        todo!("DEC not implemented yet")
+    }
+
+    pub(super) fn iny(&mut self) {
+        todo!("INY not implemented yet")
+    }
+
+    pub(super) fn dex(&mut self) {
+        todo!("DEX not implemented yet")
+    }
+
+    pub(super) fn axs(&mut self) {
+        todo!("AXS not implemented yet")
+    }
+
+    pub(super) fn bne(&mut self) {
+        todo!("BNE not implemented yet")
+    }
 }
