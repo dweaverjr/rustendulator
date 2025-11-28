@@ -1,5 +1,7 @@
 use rustendulator::Nes;
 
 fn main() {
-    let nes = Nes::new();
+    let mut nes = Nes::new();
+
+    nes.run_frame();
 }
