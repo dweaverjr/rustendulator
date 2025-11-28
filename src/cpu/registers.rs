@@ -175,4 +175,8 @@ impl CpuRegisters {
     fn clear_overflow(&mut self) {
         self.status_flags &= !OVERFLOW_MASK;
     }
+
+    pub(super) fn increment_pc(&mut self) {
+        self.program_counter = self.program_counter.wrapping_add(1)
+    }
 }
