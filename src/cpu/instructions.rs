@@ -268,4 +268,36 @@ impl Cpu {
     pub(super) fn bne(&mut self) {
         todo!("BNE not implemented yet")
     }
+
+    pub(super) fn cld(&mut self) {
+        todo!("CLD not implemented yet")
+    }
+
+    pub(super) fn cpx(&mut self) {
+        todo!("CPX not implemented yet")
+    }
+
+    pub(super) fn sbc(&mut self) {
+        todo!("SBC not implemented yet")
+    }
+
+    pub(super) fn isc(&mut self) {
+        todo!("ISC not implemented yet")
+    }
+
+    pub(super) fn inc(&mut self) {
+        todo!("INC not implemented yet")
+    }
+
+    pub(super) fn inx(&mut self) {
+        todo!("INX not implemented yet")
+    }
+
+    pub(super) fn beq(&mut self) {
+        todo!("BEQ not implemented yet")
+    }
+
+    pub(super) fn sed(&mut self) {
+        todo!("SED not implemented yet")
+    }
 }
