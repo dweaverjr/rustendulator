@@ -15,7 +15,7 @@ impl Ram {
     }
 
     pub(crate) fn write(&mut self, address: u16, value: u8) {
-        let index: usize = (address & 0x07ff) as usize;
+        let index = (address & 0x07ff) as usize;
         self.address[index] = value;
     }
 }
