@@ -1,4 +1,6 @@
 use super::Cpu;
+
+#[derive(Copy, Clone)]
 pub(super) enum AddressingMode {
     ZeroPage,
     ZeroPageX,
@@ -17,11 +19,11 @@ pub(super) enum AddressingMode {
 
 // Records for the opcode table
 pub(super) struct OpcodeRecord {
-    mnemonic: &'static str,
-    handler: fn(&mut Cpu),
-    cycles: u8,
-    addressing_mode: AddressingMode,
-    page_cross_penalty: bool,
+    pub(super) mnemonic: &'static str,
+    pub(super) handler: fn(&mut Cpu),
+    pub(super) cycles: u8,
+    pub(super) addressing_mode: AddressingMode,
+    pub(super) page_cross_penalty: bool,
 }
 
 // Helper function to represent record more cleanly
