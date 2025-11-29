@@ -1,6 +1,27 @@
-use super::Cpu;
+use super::{Cpu, opcodes::AddressingMode};
 
 impl Cpu {
+    // Helpers for instruction handlers
+    // Stack helpers
+    fn push_byte(&mut self, value: u8) {}
+
+    fn push_word(&mut self, value: u16) {}
+
+    fn pop_byte(&mut self) {}
+
+    fn pop_word(&mut self) {}
+    // Address helper
+    fn get_operand_address(&mut self, mode: AddressingMode) {}
+    // Status helpers
+    fn update_zero_and_negative(&mut self, value: u8) {}
+
+    fn update_carry_zero_negative(&mut self, value: u8) {}
+    // Branch helper
+    fn branch(&mut self, condition: bool) {}
+    // Page cross helper
+    fn check_page_cross(&mut self, base: u16, offset: u8) {}
+
+    // Instruction handlers
     pub(super) fn brk(&mut self) {
         todo!("BRK not implemented yet")
     }
