@@ -10,28 +10,28 @@ pub(super) struct CpuRegisters {
 // Status flag and stack push masks
 
 // Bit 0 - C
-const CARRY_MASK: u8 = 0b0000_0001;
+pub(super) const CARRY_MASK: u8 = 0b0000_0001;
 
 // Bit 1 - Z
-const ZERO_MASK: u8 = 0b0000_0010;
+pub(super) const ZERO_MASK: u8 = 0b0000_0010;
 
 // Bit 2 - I
-const INTERRUPT_DISABLE_MASK: u8 = 0b0000_0100;
+pub(super) const INTERRUPT_DISABLE_MASK: u8 = 0b0000_0100;
 
 // Bit 3 - D
-const DECIMAL_MASK: u8 = 0b0000_1000;
+pub(super) const DECIMAL_MASK: u8 = 0b0000_1000;
 
 // Bit 4 - B
-const STACK_BREAK_MASK: u8 = 0b0001_0000;
+pub(super) const STACK_BREAK_MASK: u8 = 0b0001_0000;
 
 // Bit 5 - 1
-const UNUSED_MASK: u8 = 0b0010_0000;
+pub(super) const UNUSED_MASK: u8 = 0b0010_0000;
 
 // Bit 6 - V
-const OVERFLOW_MASK: u8 = 0b0100_0000;
+pub(super) const OVERFLOW_MASK: u8 = 0b0100_0000;
 
 // Bit 7 - N
-const NEGATIVE_MASK: u8 = 0b1000_0000;
+pub(super) const NEGATIVE_MASK: u8 = 0b1000_0000;
 
 impl CpuRegisters {
     // Initialized to post reset state
@@ -48,34 +48,34 @@ impl CpuRegisters {
 
     // Register getters for GUI
 
-    fn accumulator(&self) -> u8 {
+    pub fn accumulator(&self) -> u8 {
         self.accumulator
     }
 
-    fn index_x(&self) -> u8 {
+    pub fn index_x(&self) -> u8 {
         self.index_x
     }
 
-    fn index_y(&self) -> u8 {
+    pub fn index_y(&self) -> u8 {
         self.index_y
     }
 
-    fn program_counter(&self) -> u16 {
+    pub fn program_counter(&self) -> u16 {
         self.program_counter
     }
 
-    fn stack_pointer(&self) -> u8 {
+    pub fn stack_pointer(&self) -> u8 {
         self.stack_pointer
     }
 
 
     // Status flag getters and setters
 
-    fn carry(&self) -> bool {
+    pub fn carry(&self) -> bool {
         self.status_flags & CARRY_MASK != 0
     }
 
-    fn set_carry(&mut self, value: bool) {
+    pub(super) fn set_carry(&mut self, value: bool) {
         if value {
             self.status_flags |= CARRY_MASK
         } else {
@@ -83,11 +83,11 @@ impl CpuRegisters {
         }
     }
 
-    fn zero(&self) -> bool {
+    pub fn zero(&self) -> bool {
         self.status_flags & ZERO_MASK != 0
     }
 
-    fn set_zero(&mut self, value: bool) {
+    pub(super) fn set_zero(&mut self, value: bool) {
         if value {
             self.status_flags |= ZERO_MASK
         } else {
@@ -95,11 +95,11 @@ impl CpuRegisters {
         }
     }
 
-    fn interrupt_disable(&self) -> bool {
+    pub fn interrupt_disable(&self) -> bool {
         self.status_flags & INTERRUPT_DISABLE_MASK != 0
     }
 
-    fn set_interrupt_disable(&mut self, value: bool) {
+    pub(super) fn set_interrupt_disable(&mut self, value: bool) {
         if value {
             self.status_flags |= INTERRUPT_DISABLE_MASK
         } else {
@@ -107,11 +107,11 @@ impl CpuRegisters {
         }
     }
 
-    fn decimal(&self) -> bool {
+    pub fn decimal(&self) -> bool {
         self.status_flags & DECIMAL_MASK != 0
     }
 
-    fn set_decimal(&mut self, value: bool) {
+    pub(super) fn set_decimal(&mut self, value: bool) {
         if value {
             self.status_flags |= DECIMAL_MASK
         } else {
@@ -119,11 +119,11 @@ impl CpuRegisters {
         }
     }
 
-    fn overflow(&self) -> bool {
+    pub fn overflow(&self) -> bool {
         self.status_flags & OVERFLOW_MASK != 0
     }
 
-    fn set_overflow(&mut self, value: bool) {
+    pub(super) fn set_overflow(&mut self, value: bool) {
         if value {
             self.status_flags |= OVERFLOW_MASK
         } else {
@@ -131,11 +131,11 @@ impl CpuRegisters {
         }
     }
 
-    fn negative(&self) -> bool {
+    pub fn negative(&self) -> bool {
         self.status_flags & NEGATIVE_MASK != 0
     }
 
-    fn set_negative(&mut self, value: bool) {
+    pub(super) fn set_negative(&mut self, value: bool) {
         if value {
             self.status_flags |= NEGATIVE_MASK
         } else {
@@ -143,8 +143,8 @@ impl CpuRegisters {
         }
     }
 
-    // Stack operations
-    fn status_for_stack_push(&self, is_break: bool) -> u8 {
+    // Helpers for handling status with stack operations
+    pub(super) fn status_for_stack_push(&self, is_break: bool) -> u8 {
         let mut result = self.status_flags | UNUSED_MASK;
 
         if is_break {
@@ -155,25 +155,8 @@ impl CpuRegisters {
         result
     }
 
-    fn set_status_from_stack_pull(&mut self, value: u8) {
+    pub(super) fn set_status_from_stack_pop(&mut self, value: u8) {
         self.status_flags = (value & 0b1100_1111) | UNUSED_MASK;
-    }
-
-    // Special flag clearing functions
-    fn clear_carry(&mut self) {
-        self.status_flags &= !CARRY_MASK;
-    }
-
-    fn clear_interrupt_disable(&mut self) {
-        self.status_flags &= !INTERRUPT_DISABLE_MASK;
-    }
-
-    fn clear_decimal(&mut self) {
-        self.status_flags &= !DECIMAL_MASK;
-    }
-
-    fn clear_overflow(&mut self) {
-        self.status_flags &= !OVERFLOW_MASK;
     }
 
     pub(super) fn increment_pc(&mut self) {
