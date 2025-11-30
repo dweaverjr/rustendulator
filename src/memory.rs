@@ -78,5 +78,13 @@ impl Oam {
         }
     }
 
-    
+    pub(crate) fn dma_write(&mut self, start_address: u8, source: &[u8; 0x100]) {
+        let start = start_address as usize;
+        let split = 256 - start;
+
+        // Copy starting at start_address until split boundary
+        self.data[start..].copy_from_slice(&source[..split]);
+        // Wrap around to beginning and finish
+        self.data[..start].copy_from_slice(&source[split..]);
+    }
 }
