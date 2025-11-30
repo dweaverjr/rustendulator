@@ -11,7 +11,7 @@ pub(crate) struct Cpu {
     cycle_counter: u8,
     current_handler: Option<fn(&mut Cpu)>,
     current_addressing_mode: AddressingMode,
-    current_page_mode_penalty: bool,
+    current_page_cross_penalty: bool,
 }
 
 impl Cpu {
@@ -22,7 +22,7 @@ impl Cpu {
             cycle_counter: 0,
             current_handler: None,
             current_addressing_mode: AddressingMode::Implicit,
-            current_page_mode_penalty: false,
+            current_page_cross_penalty: false,
         }
     }
 
@@ -49,7 +49,7 @@ impl Cpu {
         // Store the handler for later when cycle counter is exhausted
         self.current_handler = Some(opcode_record.handler);
         self.current_addressing_mode = opcode_record.addressing_mode;
-        self.current_page_mode_penalty = opcode_record.page_cross_penalty;
+        self.current_page_cross_penalty = opcode_record.page_cross_penalty;
 
     }
 
@@ -57,6 +57,12 @@ impl Cpu {
         let byte = self.read_bus(self.registers.program_counter);
         self.registers.increment_pc();
         byte
+    }
+
+    fn fetch_word(&mut self) -> u16 {
+        let low = self.fetch_byte();
+        let high = self.fetch_byte();
+        u16::from_le_bytes([low, high])
     }
 
     fn read_bus(&self, address: u16) -> u8 {
