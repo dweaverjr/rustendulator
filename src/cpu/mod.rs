@@ -1,14 +1,15 @@
 mod instructions;
 mod opcodes;
 mod registers;
-use self::registers::CpuRegisters;
 use self::opcodes::AddressingMode;
+use self::registers::CpuRegisters;
 use crate::bus::Bus;
 
 pub(crate) struct Cpu {
     registers: CpuRegisters,
     bus: *mut Bus,
     cycle_counter: u8,
+    total_cycles: u64,
     current_handler: Option<fn(&mut Cpu)>,
     current_addressing_mode: AddressingMode,
     current_page_cross_penalty: bool,
@@ -20,6 +21,7 @@ impl Cpu {
             registers: CpuRegisters::new(),
             bus: bus,
             cycle_counter: 0,
+            total_cycles: 0,
             current_handler: None,
             current_addressing_mode: AddressingMode::Implicit,
             current_page_cross_penalty: false,
@@ -27,6 +29,8 @@ impl Cpu {
     }
 
     pub fn tick(&mut self) {
+        self.total_cycles += 1;
+
         // Approach is, exhaust cycles until the last, then execute. Mid instruction quirks are easier to deal with
         if self.cycle_counter > 0 {
             // TODO: track interrupts for BRK etc.
@@ -37,7 +41,7 @@ impl Cpu {
                     handler(self); // Execute the intruction handler
                 }
             }
-            return; 
+            return;
         }
 
         // TODO: DMA handling later
@@ -50,7 +54,6 @@ impl Cpu {
         self.current_handler = Some(opcode_record.handler);
         self.current_addressing_mode = opcode_record.addressing_mode;
         self.current_page_cross_penalty = opcode_record.page_cross_penalty;
-
     }
 
     fn fetch_byte(&mut self) -> u8 {
@@ -70,6 +73,8 @@ impl Cpu {
     }
 
     fn write_bus(&self, address: u16, value: u8) {
-        unsafe { (*self.bus).write(address, value);}
+        unsafe {
+            (*self.bus).write(address, value);
+        }
     }
 }
