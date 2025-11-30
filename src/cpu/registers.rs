@@ -7,7 +7,16 @@ pub(super) struct CpuRegisters {
     status_flags: u8,
 }
 
-// Status flag and stack push masks
+// Status flag and stack/page masks
+
+// The stack always references 0x0100 to 0x01FF
+pub(super) const STACK_PAGE: u16 = 0x0100;
+
+// Used for testing for page boundaries (high byte)
+pub(super) const PAGE_MASK: u16 = 0xFF00;
+
+// Used for masking the offest (low byte)
+pub(super) const OFFSET_MASK: u16 = 0x00FF;
 
 // Bit 0 - C
 pub(super) const CARRY_MASK: u8 = 0b0000_0001;
@@ -31,6 +40,7 @@ pub(super) const UNUSED_MASK: u8 = 0b0010_0000;
 pub(super) const OVERFLOW_MASK: u8 = 0b0100_0000;
 
 // Bit 7 - N
+// Dual purpose, this also doubles as a mask for negative test because of original 6502 wiring
 pub(super) const NEGATIVE_MASK: u8 = 0b1000_0000;
 
 impl CpuRegisters {
@@ -67,7 +77,6 @@ impl CpuRegisters {
     pub fn stack_pointer(&self) -> u8 {
         self.stack_pointer
     }
-
 
     // Status flag getters and setters
 
@@ -157,6 +166,14 @@ impl CpuRegisters {
 
     pub(super) fn set_status_from_stack_pop(&mut self, value: u8) {
         self.status_flags = (value & 0b1100_1111) | UNUSED_MASK;
+    }
+
+    pub(super) fn decrement_sp(&mut self) {
+        self.stack_pointer = self.stack_pointer.wrapping_sub(1);
+    }
+
+    pub(super) fn increment_sp(&mut self) {
+        self.stack_pointer = self.stack_pointer.wrapping_add(1);
     }
 
     pub(super) fn increment_pc(&mut self) {
