@@ -77,4 +77,7 @@ impl Cpu {
             (*self.bus).write(address, value);
         }
     }
+
+//     fn perform_oam_dma(&self, )
+
 }

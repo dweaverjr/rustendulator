@@ -1,4 +1,5 @@
 use crate::memory::Ram;
+use crate::ppu::Ppu;
 
 pub(crate) struct Bus {
     ram: Ram,
