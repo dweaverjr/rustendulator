@@ -18,8 +18,6 @@ impl Ram {
     }
 }
 
-
-
 pub(crate) struct Vram {
     data: [u8; 0x0800],
 }
@@ -67,4 +65,18 @@ impl Palette {
     pub(crate) fn write(&mut self, address: u16, value: u8) {
         self.data[Self::normalize(address)] = value;
     }
+}
+
+pub(crate) struct Oam {
+    data: [u8; 0x100],
+}
+
+impl Oam {
+    pub(crate) fn new() -> Self {
+        Self {
+            data: [0xFF; 0x100],
+        }
+    }
+
+    
 }
