@@ -7,8 +7,8 @@ use crate::bus::Bus;
 
 pub(crate) struct Cpu {
     registers: CpuRegisters,
-    bus: *mut Bus,
     cycle_counter: u8,
+    bus: *mut Bus,
     total_cycles: u64,
     current_handler: Option<fn(&mut Cpu)>,
     current_addressing_mode: AddressingMode,
@@ -19,8 +19,8 @@ impl Cpu {
     pub fn new(bus: *mut Bus) -> Self {
         Self {
             registers: CpuRegisters::new(),
-            bus: bus,
             cycle_counter: 0,
+            bus,
             total_cycles: 0,
             current_handler: None,
             current_addressing_mode: AddressingMode::Implicit,
