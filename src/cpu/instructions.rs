@@ -1,25 +1,181 @@
-use super::{Cpu, opcodes::AddressingMode};
+use super::{Cpu, opcodes::AddressingMode, registers};
 
 impl Cpu {
     // Helpers for instruction handlers
     // Stack helpers
-    fn push_byte(&mut self, value: u8) {}
+    fn push_byte(&mut self, value: u8) {
+        let stack_address = registers::STACK_PAGE | self.registers.stack_pointer as u16;
+        self.write_bus(stack_address, value);
+        self.registers.decrement_sp();
+    }
 
-    fn push_word(&mut self, value: u16) {}
+    fn push_word(&mut self, value: u16) {
+        let [low, high] = value.to_le_bytes();
+        self.push_byte(high);
+        self.push_byte(low);
+    }
 
-    fn pop_byte(&mut self) {}
+    fn pop_byte(&mut self) -> u8 {
+        self.registers.increment_sp();
+        let stack_address = registers::STACK_PAGE | (self.registers.stack_pointer as u16);
+        self.read_bus(stack_address)
+    }
 
-    fn pop_word(&mut self) {}
+    fn pop_word(&mut self) -> u16 {
+        let low = self.pop_byte();
+        let high = self.pop_byte();
+        u16::from_le_bytes([low, high])
+    }
+
     // Address helper
-    fn get_operand_address(&mut self, mode: AddressingMode) {}
-    // Status helpers
-    fn update_zero_and_negative(&mut self, value: u8) {}
+    fn get_operand_address(&mut self, mode: AddressingMode) -> u16 {
+        match mode {
+            AddressingMode::Immediate => {
+                let address = self.registers.program_counter;
+                self.registers.increment_pc();
+                address
+            }
 
-    fn update_carry_zero_negative(&mut self, value: u8) {}
+            AddressingMode::ZeroPage => self.fetch_byte() as u16,
+
+            AddressingMode::ZeroPageX => {
+                let base = self.fetch_byte();
+                base.wrapping_add(self.registers.index_x) as u16
+            }
+
+            AddressingMode::ZeroPageY => {
+                let base = self.fetch_byte();
+                base.wrapping_add(self.registers.index_y) as u16
+            }
+
+            AddressingMode::Absolute => self.fetch_word(),
+
+            AddressingMode::AbsoluteX => {
+                let base = self.fetch_word();
+                let final_address = base.wrapping_add(self.registers.index_x as u16);
+
+                // Dummy read if page crosses
+                if (registers::PAGE_MASK & base) != (registers::PAGE_MASK & final_address) {
+                    let wrong_address =
+                        (registers::PAGE_MASK & base) | (registers::OFFSET_MASK & final_address);
+                    self.read_bus(wrong_address);
+                    self.cycle_counter += 1;
+                }
+
+                final_address
+            }
+
+            AddressingMode::AbsoluteY => {
+                let base = self.fetch_word();
+                let final_address = base.wrapping_add(self.registers.index_y as u16);
+
+                // Dummy read if page crosses
+                if (registers::PAGE_MASK & base) != (registers::PAGE_MASK & final_address) {
+                    let wrong_address =
+                        (registers::PAGE_MASK & base) | (registers::OFFSET_MASK & final_address);
+                    self.read_bus(wrong_address);
+                    self.cycle_counter += 1;
+                }
+
+                final_address
+            }
+
+            AddressingMode::Indirect => {
+                let pointer_address = self.fetch_word();
+                let low = self.read_bus(pointer_address);
+
+                // 6502 bug, wraps within page boundary
+                let high_address = (pointer_address & registers::PAGE_MASK)
+                    | ((pointer_address.wrapping_add(1)) & registers::OFFSET_MASK);
+                let high = self.read_bus(high_address);
+
+                u16::from_le_bytes([low, high])
+            }
+
+            AddressingMode::IndirectX => {
+                let base = self.fetch_byte();
+                let pointer = base.wrapping_add(self.registers.index_x);
+                // reads at zero page hence casts to u16
+                let low = self.read_bus(pointer as u16);
+                let high = self.read_bus(pointer.wrapping_add(1) as u16);
+                u16::from_le_bytes([low, high])
+            }
+
+            AddressingMode::IndirectY => {
+                let pointer = self.fetch_byte();
+                let low = self.read_bus(pointer as u16);
+                let high = self.read_bus(pointer.wrapping_add(1) as u16);
+                let base = u16::from_le_bytes([low, high]);
+                let final_address = base.wrapping_add(self.registers.index_y as u16);
+
+                // Dummy read on page cross
+                if (registers::PAGE_MASK & base) != (registers::PAGE_MASK & final_address) {
+                    let wrong_address =
+                        (registers::PAGE_MASK & base) | (registers::OFFSET_MASK & final_address);
+                    self.read_bus(wrong_address);
+                    self.cycle_counter += 1;
+                }
+
+                final_address
+            }
+
+            AddressingMode::Relative => {
+                // Branch helper handles offset
+                self.registers.program_counter
+            }
+
+            AddressingMode::Accumulator => {
+                // Operates on accumulator, nothing to use here
+                0
+            }
+
+            AddressingMode::Implicit => {
+                // No operand, nothing to use here
+                0
+            }
+        }
+    }
+
+    // Status helpers
+    fn update_zero_and_negative(&mut self, value: u8) {
+        self.registers.set_zero(value == 0);
+        self.registers
+            .set_negative(value & registers::NEGATIVE_MASK != 0);
+    }
+
+    fn update_carry_zero_negative(&mut self, value: u8, carry: bool) {
+        self.registers.set_carry(carry);
+        self.update_zero_and_negative(value);
+    }
+
     // Branch helper
-    fn branch(&mut self, condition: bool) {}
+    fn branch(&mut self, condition: bool) {
+        let offset = self.fetch_byte() as i8;
+        if condition {
+            let previous_program_counter = self.registers.program_counter;
+            self.registers.program_counter =
+                // negative offsets wrap around to effectively subtract using two's complement
+                previous_program_counter.wrapping_add(offset as i16 as u16);
+
+            self.cycle_counter += 1;
+
+            if (registers::PAGE_MASK & previous_program_counter)
+                != (registers::PAGE_MASK & self.registers.program_counter)
+            {
+                self.cycle_counter += 1;
+            }
+        }
+    }
+
     // Page cross helper
-    fn check_page_cross(&mut self, base: u16, offset: u8) {}
+    fn check_page_cross(&mut self, base_address: u16, offset: u8) {
+        if self.current_page_cross_penalty {
+            let offset_address = base_address.wrapping_add(offset as u16);
+            if (registers::PAGE_MASK & base_address) != (registers::PAGE_MASK & offset_address) {
+                self.cycle_counter += 1;
+            }
+        }
+    }
 
     // Instruction handlers
     pub(super) fn brk(&mut self) {
