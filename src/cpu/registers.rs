@@ -15,7 +15,7 @@ pub(super) const STACK_PAGE: u16 = 0x0100;
 // Used for testing for page boundaries (high byte)
 pub(super) const PAGE_MASK: u16 = 0xFF00;
 
-// Used for masking the offest (low byte)
+// Used for masking the offset (low byte)
 pub(super) const OFFSET_MASK: u16 = 0x00FF;
 
 // Bit 0 - C
