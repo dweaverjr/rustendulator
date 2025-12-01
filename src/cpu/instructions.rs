@@ -179,11 +179,26 @@ impl Cpu {
 
     // Instruction handlers
     pub(super) fn brk(&mut self) {
-        todo!("BRK not implemented yet")
+        // To get PC + 2 including original BRK fetch
+        self.registers.increment_pc();
+
+        self.push_word(self.registers.program_counter);
+
+        self.push_byte(self.registers.status_for_stack_push(true));
+
+        self.registers.set_interrupt_disable(true);
+
+        let vector_low = self.read_bus(Self::IRQ_VECTOR);
+        let vector_high = self.read_bus(Self::IRQ_VECTOR + 1);
+        self.registers.program_counter = u16::from_le_bytes([vector_low, vector_high]);
     }
 
     pub(super) fn ora(&mut self) {
-        todo!("ORA not implemented yet")
+        let address = self.get_operand_address(self.current_addressing_mode);
+        let value = self.read_bus(address);
+
+        self.registers.accumulator |= value;
+        self.update_zero_and_negative(self.registers.accumulator);
     }
 
     pub(super) fn kil(&mut self) {
