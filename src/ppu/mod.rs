@@ -5,7 +5,7 @@ use crate::memory::{Oam, Palette, Vram};
 
 pub(crate) struct Ppu {
     registers: PpuRegisters,
-    oam: Oam,
+    pub(super) oam: Oam,
     palette: Palette,
     vram: Vram,
 }
@@ -18,5 +18,9 @@ impl Ppu {
             palette: Palette::new(),
             vram: Vram::new(),
         }
+    }
+
+    pub(super) fn get_oam_address(&self) -> u8 {
+        self.registers.oam_address
     }
 }

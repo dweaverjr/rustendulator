@@ -9,7 +9,7 @@ pub(super) struct PpuRegisters {
     ppuctrl: u8,     // $2000 - Control flags
     ppumask: u8,     // $2001 - Rendering flags
     ppustatus: u8,   // $2002 - Status flags (mostly read-only)
-    oam_address: u8, // $2003 - OAM read/write address
+    pub(super) oam_address: u8, // $2003 - OAM read/write address
     
     // Internal state
     read_buffer: u8, // Buffered read for $2007

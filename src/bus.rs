@@ -3,6 +3,7 @@ use crate::ppu::Ppu;
 
 pub(crate) struct Bus {
     ram: Ram,
+    ppu: Ppu,
     last_read: u8,
 }
 
@@ -10,6 +11,7 @@ impl Bus {
     pub(crate) fn new() -> Self {
         Self {
             ram: Ram::new(),
+            ppu: Ppu::new(),
             last_read: 0,
         }
     }
@@ -40,5 +42,10 @@ impl Bus {
             0x4020..=0xFFFF => todo!(),                        // Cartridge
             _ => {}                                            // Open Bus
         }
+    }
+
+    pub(crate) fn load_oam_data(&mut self, buffer: &[u8; 0x100]) {
+        let oam_address = self.ppu.get_oam_address();
+        self.ppu.oam.dma_write(oam_address, &buffer);
     }
 }

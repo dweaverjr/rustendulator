@@ -7,7 +7,7 @@ use crate::bus::Bus;
 
 pub(crate) struct Cpu {
     registers: CpuRegisters,
-    cycle_counter: u8,
+    cycle_counter: u16,
     bus: *mut Bus,
     total_cycles: u64,
     current_handler: Option<fn(&mut Cpu)>,
@@ -78,6 +78,24 @@ impl Cpu {
         }
     }
 
-//     fn perform_oam_dma(&self, )
+    fn perform_oam_dma(&mut self, page: u8) {
+        // might make this a per cycle operation later
+        let odd_cycle = if self.total_cycles & 1 != 0 { 1 } else { 0 };
 
+        // Read 256 bytes from CPU memory
+        let page_start = (page as u16) << 8;
+        let mut buffer = [0u8; 0x100];
+        for i in 0u16..256 {
+            buffer[i as usize] = self.read_bus(page_start + i);
+        }
+
+        // Write to OAM
+
+        unsafe {
+            (*self.bus).load_oam_data(&buffer);
+        }
+
+        // Suspend: 513 transfer cycles + 1 if odd cycle
+        self.cycle_counter = 513 + odd_cycle;
+    }
 }

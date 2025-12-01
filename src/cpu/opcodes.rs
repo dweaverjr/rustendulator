@@ -21,7 +21,7 @@ pub(super) enum AddressingMode {
 pub(super) struct OpcodeRecord {
     pub(super) mnemonic: &'static str,
     pub(super) handler: fn(&mut Cpu),
-    pub(super) cycles: u8,
+    pub(super) cycles: u16,
     pub(super) addressing_mode: AddressingMode,
     pub(super) page_cross_penalty: bool,
 }
@@ -30,7 +30,7 @@ pub(super) struct OpcodeRecord {
 const fn opcode(
     mnemonic: &'static str,
     handler: fn(&mut Cpu),
-    cycles: u8,
+    cycles: u16,
     addressing_mode: AddressingMode,
     page_cross_penalty: bool,
 ) -> OpcodeRecord {
