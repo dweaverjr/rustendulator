@@ -31,7 +31,9 @@ impl Cpu {
     pub fn tick(&mut self) {
         self.total_cycles += 1;
 
-        // Approach is, exhaust cycles until the last, then execute. Mid instruction quirks are easier to deal with
+        // Approach is, exhaust cycles until the last, then execute
+        // Mid instruction quirks are easier to deal with
+        // This also allows halting for DMA transfer using the same counter
         if self.cycle_counter > 0 {
             // TODO: track interrupts for BRK etc.
             self.cycle_counter -= 1;
