@@ -16,6 +16,11 @@ pub(crate) struct Cpu {
 }
 
 impl Cpu {
+    // Hardcoded vectors
+    const NMI_VECTOR: u16 = 0xFFFA;
+    const RESET_VECTOR: u16 = 0xFFFC;
+    const IRQ_VECTOR: u16 = 0xFFFE;
+
     pub fn new(bus: *mut Bus) -> Self {
         Self {
             registers: CpuRegisters::new(),
