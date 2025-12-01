@@ -46,8 +46,6 @@ impl Cpu {
             return;
         }
 
-        // TODO: DMA handling later
-
         let opcode = self.fetch_byte();
         let opcode_record = &opcodes::OPCODE_TABLE[opcode as usize];
         // Burn one cycle for the fetch and decode
@@ -74,21 +72,26 @@ impl Cpu {
         unsafe { (*self.bus).read(address) }
     }
 
-    fn write_bus(&self, address: u16, value: u8) {
+    fn write_bus(&mut self, address: u16, value: u8) {
+        // Single exception trap for OAMDMA write, never reaches the bus but keeps everything else simple
+        if address == 0x4014 {
+            self.perform_oamdma_write(value);
+            return;
+        }
         unsafe {
             (*self.bus).write(address, value);
         }
     }
 
-    fn perform_oam_dma(&mut self, page: u8) {
+    fn perform_oamdma_write(&mut self, page: u8) {
         // might make this a per cycle operation later
-        let odd_cycle = if self.total_cycles & 1 != 0 { 1 } else { 0 };
+        let odd_cycle = (self.total_cycles & 1) as u16;
 
         // Read 256 bytes from CPU memory
         let page_start = (page as u16) << 8;
         let mut buffer = [0u8; 0x100];
-        for i in 0u16..256 {
-            buffer[i as usize] = self.read_bus(page_start + i);
+        for i in 0..256 {
+            buffer[i] = self.read_bus(page_start + i as u16);
         }
 
         // Write to OAM
