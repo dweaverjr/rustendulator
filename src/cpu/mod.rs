@@ -13,6 +13,7 @@ pub(crate) struct Cpu {
     current_handler: Option<fn(&mut Cpu)>,
     current_addressing_mode: AddressingMode,
     current_page_cross_penalty: bool,
+    halted: bool,
 }
 
 impl Cpu {
@@ -30,11 +31,16 @@ impl Cpu {
             current_handler: None,
             current_addressing_mode: AddressingMode::Implicit,
             current_page_cross_penalty: false,
+            halted: false,
         }
     }
 
     pub fn tick(&mut self) {
         self.total_cycles += 1;
+
+        if self.halted {
+            return;
+        }
 
         // Approach is, exhaust cycles until the last, then execute
         // Mid instruction quirks are easier to deal with

@@ -202,7 +202,7 @@ impl Cpu {
     }
 
     pub(super) fn kil(&mut self) {
-        todo!("KIL not implemented yet")
+        self.halted = true;
     }
 
     pub(super) fn slo(&mut self) {
