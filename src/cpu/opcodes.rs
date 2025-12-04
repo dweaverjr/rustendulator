@@ -1,6 +1,6 @@
 use super::Cpu;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub(super) enum AddressingMode {
     ZeroPage,
     ZeroPageX,
