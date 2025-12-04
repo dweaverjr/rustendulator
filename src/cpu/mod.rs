@@ -42,6 +42,8 @@ impl Cpu {
             return;
         }
 
+        // TODO: Add logic for handling IRQ delay for CLI and SEI
+
         // Approach is, exhaust cycles until the last, then execute
         // Mid instruction quirks are easier to deal with
         // This also allows halting for DMA transfer using the same counter
