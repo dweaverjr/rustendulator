@@ -167,16 +167,6 @@ impl Cpu {
         }
     }
 
-    // Page cross helper
-    fn check_page_cross(&mut self, base_address: u16, offset: u8) {
-        if self.current_page_cross_penalty {
-            let offset_address = base_address.wrapping_add(offset as u16);
-            if (registers::PAGE_MASK & base_address) != (registers::PAGE_MASK & offset_address) {
-                self.cycle_counter += 1;
-            }
-        }
-    }
-
     // Instruction handlers
     pub(super) fn brk(&mut self) {
         // To get PC + 2 including original BRK fetch
@@ -206,63 +196,139 @@ impl Cpu {
     }
 
     pub(super) fn slo(&mut self) {
-        todo!("SLO not implemented yet")
+        let address = self.get_operand_address(self.current_addressing_mode);
+        let value = self.read_bus(address);
+        // Dummy write
+        self.write_bus(address, value);
+
+        let carry = value & 0x80 != 0;
+        let shifted = value << 1;
+        self.write_bus(address, shifted);
+
+        self.registers.accumulator |= shifted;
+
+        self.update_carry_zero_negative(self.registers.accumulator, carry);
     }
 
     pub(super) fn nop(&mut self) {
-        todo!("NOP not implemented yet")
+        let _ = self.get_operand_address(self.current_addressing_mode);
     }
 
     pub(super) fn asl(&mut self) {
-        todo!("ASL not implemented yet")
+        if self.current_addressing_mode == AddressingMode::Accumulator {
+            let value = self.registers.accumulator;
+            let carry = value & 0x80 != 0;
+            self.registers.accumulator = value << 1;
+            self.update_carry_zero_negative(self.registers.accumulator, carry);
+        } else {
+            let address = self.get_operand_address(self.current_addressing_mode);
+            let value = self.read_bus(address);
+            // Dummy write
+            self.write_bus(address, value);
+            let carry = value & 0x80 != 0;
+            let shifted = value << 1;
+            self.write_bus(address, shifted);
+            self.update_carry_zero_negative(shifted, carry);
+        }
     }
 
     pub(super) fn php(&mut self) {
-        todo!("PHP not implemented yet")
+        self.push_byte(self.registers.status_for_stack_push(true));
     }
 
     pub(super) fn anc(&mut self) {
-        todo!("ANC not implemented yet")
+        let address = self.get_operand_address(self.current_addressing_mode);
+        let value = self.read_bus(address);
+
+        self.registers.accumulator &= value;
+
+        let carry = self.registers.accumulator & 0x80 != 0;
+
+        self.update_carry_zero_negative(self.registers.accumulator, carry);
     }
 
     pub(super) fn bpl(&mut self) {
-        todo!("BPL not implemented yet")
+        self.branch(!self.registers.negative());
     }
 
     pub(super) fn clc(&mut self) {
-        todo!("CLC not implemented yet")
+        self.registers.set_carry(false);
     }
 
     pub(super) fn jsr(&mut self) {
-        todo!("JSR not implemented yet")
+        let target_low = self.fetch_byte();
+
+        // Get PC one before actual next instruction to which to return
+        // RTS will pop and then increment the PC
+        self.push_word(self.registers.program_counter);
+
+        let target_high = self.fetch_byte();
+
+        self.registers.program_counter = u16::from_le_bytes([target_low, target_high]);
     }
 
     pub(super) fn and(&mut self) {
-        todo!("AND not implemented yet")
+        let address = self.get_operand_address(self.current_addressing_mode);
+        let value = self.read_bus(address);
+
+        self.registers.accumulator &= value;
+        self.update_zero_and_negative(self.registers.accumulator);
     }
 
     pub(super) fn rla(&mut self) {
-        todo!("RLA not implemented yet")
+        let address = self.get_operand_address(self.current_addressing_mode);
+        let value = self.read_bus(address);
+        // Dummy write
+        self.write_bus(address, value);
+
+        let old_carry = self.registers.carry() as u8;
+        let new_carry = value & 0x80 != 0;
+        let rotated = (value << 1) | old_carry;
+        self.write_bus(address, rotated);
+
+        self.registers.accumulator &= rotated;
+
+        self.update_carry_zero_negative(self.registers.accumulator, new_carry);
     }
 
     pub(super) fn bit(&mut self) {
-        todo!("BIT not implemented yet")
+        let address = self.get_operand_address(self.current_addressing_mode);
+        let value = self.read_bus(address);
+
+        self.registers.set_negative(value & 0x80 != 0);
+        self.registers.set_overflow(value & 0x40 != 0);
+        self.registers
+            .set_zero(self.registers.accumulator & value == 0);
     }
 
     pub(super) fn rol(&mut self) {
-        todo!("ROL not implemented yet")
+        if self.current_addressing_mode == AddressingMode::Accumulator {
+            let value = self.registers.accumulator;
+            let new_carry = value & 0x80 != 0;
+            self.registers.accumulator = (value << 1) | (self.registers.carry() as u8);
+            self.update_carry_zero_negative(self.registers.accumulator, new_carry);
+        } else {
+            let address = self.get_operand_address(self.current_addressing_mode);
+            let value = self.read_bus(address);
+            self.write_bus(address, value);
+            let new_carry = value & 0x80 != 0;
+            let rolled = (value << 1) | (self.registers.carry() as u8);
+            self.write_bus(address, rolled);
+            self.update_carry_zero_negative(rolled, new_carry);
+        }
     }
 
     pub(super) fn plp(&mut self) {
-        todo!("PLP not implemented yet")
+        let status_value = self.pop_byte();
+        self.registers.set_status_from_stack_pop(status_value);
     }
 
     pub(super) fn bmi(&mut self) {
-        todo!("BMI not implemented yet")
+        self.branch(self.registers.negative());
     }
 
     pub(super) fn sec(&mut self) {
-        todo!("SEC not implemented yet")
+        self.registers.set_carry(true);
     }
 
     pub(super) fn rti(&mut self) {
@@ -294,15 +360,17 @@ impl Cpu {
     }
 
     pub(super) fn bvc(&mut self) {
-        todo!("BVC not implemented yet")
+        self.branch(!self.registers.overflow());
     }
 
     pub(super) fn cli(&mut self) {
-        todo!("CLI not implemented yet")
+        self.registers.set_interrupt_disable(false);
     }
 
     pub(super) fn rts(&mut self) {
-        todo!("RTS not implemented yet")
+        let address = self.pop_word();
+        self.registers.program_counter = address;
+        self.registers.increment_pc();
     }
 
     pub(super) fn adc(&mut self) {
@@ -326,11 +394,11 @@ impl Cpu {
     }
 
     pub(super) fn bvs(&mut self) {
-        todo!("BVS not implemented yet")
+        self.branch(self.registers.overflow());
     }
 
     pub(super) fn sei(&mut self) {
-        todo!("SEI not implemented yet")
+        self.registers.set_interrupt_disable(true);
     }
 
     pub(super) fn sta(&mut self) {
@@ -362,7 +430,7 @@ impl Cpu {
     }
 
     pub(super) fn bcc(&mut self) {
-        todo!("BCC not implemented yet")
+        self.branch(!self.registers.carry());
     }
 
     pub(super) fn ahx(&mut self) {
@@ -414,11 +482,11 @@ impl Cpu {
     }
 
     pub(super) fn bcs(&mut self) {
-        todo!("BCS not implemented yet")
+        self.branch(self.registers.carry());
     }
 
     pub(super) fn clv(&mut self) {
-        todo!("CLV not implemented yet")
+        self.registers.set_overflow(false);
     }
 
     pub(super) fn tsx(&mut self) {
@@ -458,11 +526,11 @@ impl Cpu {
     }
 
     pub(super) fn bne(&mut self) {
-        todo!("BNE not implemented yet")
+        self.branch(!self.registers.zero());
     }
 
     pub(super) fn cld(&mut self) {
-        todo!("CLD not implemented yet")
+        self.registers.set_decimal(false);
     }
 
     pub(super) fn cpx(&mut self) {
@@ -486,10 +554,10 @@ impl Cpu {
     }
 
     pub(super) fn beq(&mut self) {
-        todo!("BEQ not implemented yet")
+        self.branch(self.registers.zero());
     }
 
     pub(super) fn sed(&mut self) {
-        todo!("SED not implemented yet")
+        self.registers.set_decimal(true);
     }
 }
