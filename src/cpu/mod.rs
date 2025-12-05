@@ -13,6 +13,7 @@ pub(crate) struct Cpu {
     current_handler: Option<fn(&mut Cpu)>,
     current_addressing_mode: AddressingMode,
     current_page_cross_penalty: bool,
+    current_is_store: bool,
     halted: bool,
 }
 
@@ -31,6 +32,7 @@ impl Cpu {
             current_handler: None,
             current_addressing_mode: AddressingMode::Implicit,
             current_page_cross_penalty: false,
+            current_is_store: false,
             halted: false,
         }
     }
