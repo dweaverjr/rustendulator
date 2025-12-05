@@ -28,7 +28,7 @@ impl Cpu {
     }
 
     // Address helper
-    fn get_operand_address(&mut self, mode: AddressingMode) -> u16 {
+    fn get_operand_address(&mut self, mode: AddressingMode, is_store: bool) -> u16 {
         match mode {
             AddressingMode::Immediate => {
                 let address = self.registers.program_counter;
@@ -54,8 +54,10 @@ impl Cpu {
                 let base = self.fetch_word();
                 let final_address = base.wrapping_add(self.registers.index_x as u16);
 
-                // Dummy read if page crosses
-                if (registers::PAGE_MASK & base) != (registers::PAGE_MASK & final_address) {
+                // Reads add a cycle on page cross; stores don't (handled in opcode table)
+                if !is_store
+                    && (registers::PAGE_MASK & base) != (registers::PAGE_MASK & final_address)
+                {
                     let wrong_address =
                         (registers::PAGE_MASK & base) | (registers::OFFSET_MASK & final_address);
                     self.read_bus(wrong_address);
@@ -69,8 +71,10 @@ impl Cpu {
                 let base = self.fetch_word();
                 let final_address = base.wrapping_add(self.registers.index_y as u16);
 
-                // Dummy read if page crosses
-                if (registers::PAGE_MASK & base) != (registers::PAGE_MASK & final_address) {
+                // Reads add a cycle on page cross; stores don't (handled in opcode table)
+                if !is_store
+                    && (registers::PAGE_MASK & base) != (registers::PAGE_MASK & final_address)
+                {
                     let wrong_address =
                         (registers::PAGE_MASK & base) | (registers::OFFSET_MASK & final_address);
                     self.read_bus(wrong_address);
@@ -108,8 +112,10 @@ impl Cpu {
                 let base = u16::from_le_bytes([low, high]);
                 let final_address = base.wrapping_add(self.registers.index_y as u16);
 
-                // Dummy read on page cross
-                if (registers::PAGE_MASK & base) != (registers::PAGE_MASK & final_address) {
+                // Reads add a cycle on page cross; stores don't (handled in opcode table)
+                if !is_store
+                    && (registers::PAGE_MASK & base) != (registers::PAGE_MASK & final_address)
+                {
                     let wrong_address =
                         (registers::PAGE_MASK & base) | (registers::OFFSET_MASK & final_address);
                     self.read_bus(wrong_address);
@@ -184,7 +190,7 @@ impl Cpu {
     }
 
     pub(super) fn ora(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.current_addressing_mode, false);
         let value = self.read_bus(address);
 
         self.registers.accumulator |= value;
@@ -196,7 +202,7 @@ impl Cpu {
     }
 
     pub(super) fn slo(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.current_addressing_mode, false);
         let value = self.read_bus(address);
         // Dummy write
         self.write_bus(address, value);
@@ -211,7 +217,7 @@ impl Cpu {
     }
 
     pub(super) fn nop(&mut self) {
-        let _ = self.get_operand_address(self.current_addressing_mode);
+        let _ = self.get_operand_address(self.current_addressing_mode, false);
     }
 
     pub(super) fn asl(&mut self) {
@@ -221,7 +227,7 @@ impl Cpu {
             self.registers.accumulator = value << 1;
             self.update_carry_zero_negative(self.registers.accumulator, carry);
         } else {
-            let address = self.get_operand_address(self.current_addressing_mode);
+            let address = self.get_operand_address(self.current_addressing_mode, false);
             let value = self.read_bus(address);
             // Dummy write
             self.write_bus(address, value);
@@ -237,7 +243,7 @@ impl Cpu {
     }
 
     pub(super) fn anc(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.current_addressing_mode, false);
         let value = self.read_bus(address);
 
         self.registers.accumulator &= value;
@@ -268,7 +274,7 @@ impl Cpu {
     }
 
     pub(super) fn and(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.current_addressing_mode, false);
         let value = self.read_bus(address);
 
         self.registers.accumulator &= value;
@@ -276,7 +282,7 @@ impl Cpu {
     }
 
     pub(super) fn rla(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.current_addressing_mode, false);
         let value = self.read_bus(address);
         // Dummy write
         self.write_bus(address, value);
@@ -292,7 +298,7 @@ impl Cpu {
     }
 
     pub(super) fn bit(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.current_addressing_mode, false);
         let value = self.read_bus(address);
 
         self.registers.set_negative(value & 0x80 != 0);
@@ -308,7 +314,7 @@ impl Cpu {
             self.registers.accumulator = (value << 1) | (self.registers.carry() as u8);
             self.update_carry_zero_negative(self.registers.accumulator, new_carry);
         } else {
-            let address = self.get_operand_address(self.current_addressing_mode);
+            let address = self.get_operand_address(self.current_addressing_mode, false);
             let value = self.read_bus(address);
 
             // Dummy write
@@ -343,7 +349,7 @@ impl Cpu {
     }
 
     pub(super) fn eor(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.current_addressing_mode, false);
         let value = self.read_bus(address);
 
         self.registers.accumulator ^= value;
@@ -351,7 +357,7 @@ impl Cpu {
     }
 
     pub(super) fn sre(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.current_addressing_mode, false);
         let value = self.read_bus(address);
 
         // Dummy write
@@ -372,7 +378,7 @@ impl Cpu {
             self.registers.accumulator = value >> 1;
             self.update_carry_zero_negative(self.registers.accumulator, carry);
         } else {
-            let address = self.get_operand_address(self.current_addressing_mode);
+            let address = self.get_operand_address(self.current_addressing_mode, false);
             let value = self.read_bus(address);
 
             // Dummy write
@@ -390,11 +396,18 @@ impl Cpu {
     }
 
     pub(super) fn alr(&mut self) {
-        todo!("ALR not implemented yet")
+        let address = self.get_operand_address(self.current_addressing_mode, false);
+        let value = self.read_bus(address);
+
+        let anded = self.registers.accumulator & value;
+        let carry = anded & 0x01 != 0;
+        self.registers.accumulator = anded >> 1;
+
+        self.update_carry_zero_negative(self.registers.accumulator, carry);
     }
 
     pub(super) fn jmp(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.current_addressing_mode, false);
         self.registers.program_counter = address;
     }
 
@@ -413,7 +426,7 @@ impl Cpu {
     }
 
     pub(super) fn adc(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.current_addressing_mode, false);
         let value = self.read_bus(address);
 
         let carry_in = self.registers.carry() as u16;
@@ -433,19 +446,81 @@ impl Cpu {
     }
 
     pub(super) fn rra(&mut self) {
-        todo!("RRA not implemented yet")
+        let address = self.get_operand_address(self.current_addressing_mode, false);
+        let value = self.read_bus(address);
+
+        // Dummy write
+        self.write_bus(address, value);
+
+        // ROR: old carry into bit 7, old bit 0 into carry
+        let old_carry = self.registers.carry() as u8;
+        let new_carry = value & 0x01 != 0;
+        let rotated = (value >> 1) | (old_carry << 7);
+        self.write_bus(address, rotated);
+
+        // Set carry from ROR before ADC uses it
+        self.registers.set_carry(new_carry);
+
+        // ADC with rotated value
+        let carry_in = self.registers.carry() as u16;
+        let accumulator = self.registers.accumulator as u16;
+        let sum = accumulator + rotated as u16 + carry_in;
+
+        let result = sum as u8;
+
+        let overflow = (self.registers.accumulator ^ result) & (rotated ^ result) & 0x80 != 0;
+        let carry = sum > 0xFF;
+
+        self.registers.accumulator = result;
+
+        self.registers.set_overflow(overflow);
+        self.registers.set_carry(carry);
+        self.update_zero_and_negative(self.registers.accumulator);
     }
 
     pub(super) fn ror(&mut self) {
-        todo!("ROR not implemented yet")
+        if self.current_addressing_mode == AddressingMode::Accumulator {
+            let value = self.registers.accumulator;
+            let new_carry = value & 0x01 != 0;
+            self.registers.accumulator = (value >> 1) | ((self.registers.carry() as u8) << 7);
+            self.update_carry_zero_negative(self.registers.accumulator, new_carry);
+        } else {
+            let address = self.get_operand_address(self.current_addressing_mode, false);
+            let value = self.read_bus(address);
+
+            // Dummy write
+            self.write_bus(address, value);
+
+            let new_carry = value & 0x01 != 0;
+            let rotated = (value >> 1) | ((self.registers.carry() as u8) << 7);
+            self.write_bus(address, rotated);
+            self.update_carry_zero_negative(rotated, new_carry);
+        }
     }
 
     pub(super) fn pla(&mut self) {
         self.registers.accumulator = self.pop_byte();
+        self.update_zero_and_negative(self.registers.accumulator);
     }
 
     pub(super) fn arr(&mut self) {
-        todo!("ARR not implemented yet")
+        let address = self.get_operand_address(self.current_addressing_mode, false);
+        let value = self.read_bus(address);
+
+        // AND
+        let anded = self.registers.accumulator & value;
+
+        // ROR
+        let result = (anded >> 1) | ((self.registers.carry() as u8) << 7);
+        self.registers.accumulator = result;
+
+        // Bizarre flag behavior
+        let bit_6 = result & 0x40 != 0;
+        let bit_5 = result & 0x20 != 0;
+
+        self.registers.set_carry(bit_6);
+        self.registers.set_overflow(bit_6 ^ bit_5);
+        self.update_zero_and_negative(result);
     }
 
     pub(super) fn bvs(&mut self) {
@@ -457,21 +532,22 @@ impl Cpu {
     }
 
     pub(super) fn sta(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.current_addressing_mode, true);
         self.write_bus(address, self.registers.accumulator);
     }
 
     pub(super) fn sax(&mut self) {
-        todo!("SAX not implemented yet")
+        let address = self.get_operand_address(self.current_addressing_mode, true);
+        self.write_bus(address, self.registers.accumulator & self.registers.index_x);
     }
 
     pub(super) fn sty(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.current_addressing_mode, true);
         self.write_bus(address, self.registers.index_y);
     }
 
     pub(super) fn stx(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.current_addressing_mode, true);
         self.write_bus(address, self.registers.index_x);
     }
 
@@ -486,7 +562,11 @@ impl Cpu {
     }
 
     pub(super) fn xaa(&mut self) {
-        todo!("XAA not implemented yet")
+        let address = self.get_operand_address(self.current_addressing_mode, false);
+        let value = self.read_bus(address);
+        self.registers.accumulator =
+            (self.registers.accumulator | 0xEE) & self.registers.index_x & value;
+        self.update_zero_and_negative(self.registers.accumulator);
     }
 
     pub(super) fn bcc(&mut self) {
@@ -494,7 +574,10 @@ impl Cpu {
     }
 
     pub(super) fn ahx(&mut self) {
-        todo!("AHX not implemented yet")
+        let address = self.get_operand_address(self.current_addressing_mode, true);
+        let high_byte = ((address >> 8) as u8).wrapping_add(1);
+        let value = self.registers.accumulator & self.registers.index_x & high_byte;
+        self.write_bus(address, value);
     }
 
     pub(super) fn tya(&mut self) {
@@ -504,44 +587,57 @@ impl Cpu {
 
     pub(super) fn txs(&mut self) {
         self.registers.stack_pointer = self.registers.index_x;
-        self.update_zero_and_negative(self.registers.stack_pointer);
     }
 
     pub(super) fn tas(&mut self) {
-        todo!("TAS not implemented yet")
+        let address = self.get_operand_address(self.current_addressing_mode, true);
+        self.registers.stack_pointer = self.registers.accumulator & self.registers.index_x;
+        let high_byte = ((address >> 8) as u8).wrapping_add(1);
+        let value = self.registers.stack_pointer & high_byte;
+        self.write_bus(address, value);
     }
 
     pub(super) fn shy(&mut self) {
-        todo!("SHY not implemented yet")
+        let address = self.get_operand_address(self.current_addressing_mode, true);
+        let high_byte = ((address >> 8) as u8).wrapping_add(1);
+        let value = self.registers.index_y & high_byte;
+        self.write_bus(address, value);
     }
 
     pub(super) fn shx(&mut self) {
-        todo!("SHX not implemented yet")
+        let address = self.get_operand_address(self.current_addressing_mode, true);
+        let high_byte = ((address >> 8) as u8).wrapping_add(1);
+        let value = self.registers.index_x & high_byte;
+        self.write_bus(address, value);
     }
 
     pub(super) fn ldy(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.current_addressing_mode, false);
         let value = self.read_bus(address);
         self.registers.index_y = value;
         self.update_zero_and_negative(value);
     }
 
     pub(super) fn lda(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.current_addressing_mode, false);
         let value = self.read_bus(address);
         self.registers.accumulator = value;
         self.update_zero_and_negative(value);
     }
 
     pub(super) fn ldx(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.current_addressing_mode, false);
         let value = self.read_bus(address);
         self.registers.index_x = value;
         self.update_zero_and_negative(value);
     }
 
     pub(super) fn lax(&mut self) {
-        todo!("LAX not implemented yet")
+        let address = self.get_operand_address(self.current_addressing_mode, false);
+        let value = self.read_bus(address);
+        self.registers.accumulator = value;
+        self.registers.index_x = value;
+        self.update_zero_and_negative(value);
     }
 
     pub(super) fn tay(&mut self) {
@@ -564,34 +660,61 @@ impl Cpu {
 
     pub(super) fn tsx(&mut self) {
         self.registers.index_x = self.registers.stack_pointer;
+        self.update_zero_and_negative(self.registers.index_x);
     }
 
     pub(super) fn las(&mut self) {
-        todo!("LAS not implemented yet")
+        let address = self.get_operand_address(self.current_addressing_mode, false);
+        let value = self.read_bus(address);
+        let result = value & self.registers.stack_pointer;
+        self.registers.accumulator = result;
+        self.registers.index_x = result;
+        self.registers.stack_pointer = result;
+        self.update_zero_and_negative(result);
     }
 
     pub(super) fn cpy(&mut self) {
-        todo!("CPY not implemented yet")
+        let address = self.get_operand_address(self.current_addressing_mode, false);
+        let value = self.read_bus(address);
+        let result = self.registers.index_y.wrapping_sub(value);
+        self.registers.set_carry(self.registers.index_y >= value);
+        self.update_zero_and_negative(result);
     }
 
     pub(super) fn cmp(&mut self) {
-        todo!("CMP not implemented yet")
+        let address = self.get_operand_address(self.current_addressing_mode, false);
+        let value = self.read_bus(address);
+        let result = self.registers.accumulator.wrapping_sub(value);
+        self.registers
+            .set_carry(self.registers.accumulator >= value);
+        self.update_zero_and_negative(result);
     }
 
     pub(super) fn dcp(&mut self) {
-        todo!("DCP not implemented yet")
+        let address = self.get_operand_address(self.current_addressing_mode, false);
+        let value = self.read_bus(address);
+        // Dummy write
+        self.write_bus(address, value);
+
+        let decremented = value.wrapping_sub(1);
+        self.write_bus(address, decremented);
+
+        let result = self.registers.accumulator.wrapping_sub(decremented);
+        self.registers
+            .set_carry(self.registers.accumulator >= decremented);
+        self.update_zero_and_negative(result);
     }
 
     pub(super) fn dec(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.current_addressing_mode, false);
         let value = self.read_bus(address);
 
         // Dummy write
         self.write_bus(address, value);
-        
-        self.write_bus(address, value.wrapping_sub(1));
-        
-        self.update_zero_and_negative(value.wrapping_sub(1));
+
+        let decremented = value.wrapping_sub(1);
+        self.write_bus(address, decremented);
+        self.update_zero_and_negative(decremented);
     }
 
     pub(super) fn iny(&mut self) {
@@ -605,7 +728,13 @@ impl Cpu {
     }
 
     pub(super) fn axs(&mut self) {
-        todo!("AXS not implemented yet")
+        let address = self.get_operand_address(self.current_addressing_mode, false);
+        let value = self.read_bus(address);
+        let anded = self.registers.accumulator & self.registers.index_x;
+        let result = anded.wrapping_sub(value);
+        self.registers.index_x = result;
+        self.registers.set_carry(anded >= value);
+        self.update_zero_and_negative(result);
     }
 
     pub(super) fn bne(&mut self) {
@@ -617,11 +746,15 @@ impl Cpu {
     }
 
     pub(super) fn cpx(&mut self) {
-        todo!("CPX not implemented yet")
+        let address = self.get_operand_address(self.current_addressing_mode, false);
+        let value = self.read_bus(address);
+        let result = self.registers.index_x.wrapping_sub(value);
+        self.registers.set_carry(self.registers.index_x >= value);
+        self.update_zero_and_negative(result);
     }
 
     pub(super) fn sbc(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.current_addressing_mode, false);
         let value = self.read_bus(address);
 
         let inverted = value ^ 0xFF;
@@ -643,19 +776,38 @@ impl Cpu {
     }
 
     pub(super) fn isc(&mut self) {
-        todo!("ISC not implemented yet")
+        let address = self.get_operand_address(self.current_addressing_mode, false);
+        let value = self.read_bus(address);
+        // Dummy write
+        self.write_bus(address, value);
+        let incremented = value.wrapping_add(1);
+        self.write_bus(address, incremented);
+
+        // SBC logic with incremented value
+        let inverted = incremented ^ 0xFF;
+        let carry_in = self.registers.carry() as u16;
+        let accumulator = self.registers.accumulator as u16;
+        let sum = accumulator + inverted as u16 + carry_in;
+        let result = sum as u8;
+
+        let overflow = (self.registers.accumulator ^ result) & (inverted ^ result) & 0x80 != 0;
+        self.registers.accumulator = result;
+        self.registers.set_overflow(overflow);
+        self.registers.set_carry(sum > 0xFF);
+        self.update_zero_and_negative(result);
     }
 
     pub(super) fn inc(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.current_addressing_mode, false);
         let value = self.read_bus(address);
 
         // Dummy write
         self.write_bus(address, value);
-        
-        self.write_bus(address, value.wrapping_add(1));
-        
-        self.update_zero_and_negative(value.wrapping_add(1));
+
+        let incremented = value.wrapping_add(1);
+        self.write_bus(address, incremented);
+
+        self.update_zero_and_negative(incremented);
     }
 
     pub(super) fn inx(&mut self) {
