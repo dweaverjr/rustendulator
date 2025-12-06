@@ -33,6 +33,37 @@ impl Cpu {
         }
     }
 
+    fn load_reset_vector(&mut self) {
+        let low = self.read_bus(Self::RESET_VECTOR);
+        let high = self.read_bus(Self::RESET_VECTOR + 1);
+        self.registers.program_counter = u16::from_le_bytes([low, high]);
+        self.cycle_counter = 7;
+    }
+
+    fn load_irq_vector(&mut self) {
+        let low = self.read_bus(Self::IRQ_VECTOR);
+        let high = self.read_bus(Self::IRQ_VECTOR + 1);
+        self.registers.program_counter = u16::from_le_bytes([low, high]);
+    }
+
+    fn load_nmi_vector(&mut self) {
+        let low = self.read_bus(Self::NMI_VECTOR);
+        let high = self.read_bus(Self::NMI_VECTOR + 1);
+        self.registers.program_counter = u16::from_le_bytes([low, high]);
+    }
+
+    pub fn power_on(&mut self) {
+        self.load_reset_vector();
+    }
+
+    pub fn reset(&mut self) {
+        self.registers.stack_pointer = self.registers.stack_pointer.wrapping_sub(3);
+        self.registers.set_interrupt_disable(true);
+        self.halted = false;
+        self.opcode_handler = None;
+        self.load_reset_vector();
+    }
+
     pub fn tick(&mut self) {
         self.total_cycles += 1;
 
