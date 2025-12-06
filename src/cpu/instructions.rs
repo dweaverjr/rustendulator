@@ -3,25 +3,25 @@ use super::{Cpu, opcodes::AddressingMode, registers};
 impl Cpu {
     // Helpers for instruction handlers
     // Stack helpers
-    fn push_byte(&mut self, value: u8) {
+    pub(super) fn push_byte(&mut self, value: u8) {
         let stack_address = registers::STACK_PAGE | self.registers.stack_pointer as u16;
         self.write_bus(stack_address, value);
         self.registers.decrement_sp();
     }
 
-    fn push_word(&mut self, value: u16) {
+    pub(super) fn push_word(&mut self, value: u16) {
         let [low, high] = value.to_le_bytes();
         self.push_byte(high);
         self.push_byte(low);
     }
 
-    fn pop_byte(&mut self) -> u8 {
+    pub(super) fn pop_byte(&mut self) -> u8 {
         self.registers.increment_sp();
         let stack_address = registers::STACK_PAGE | (self.registers.stack_pointer as u16);
         self.read_bus(stack_address)
     }
 
-    fn pop_word(&mut self) -> u16 {
+    pub(super) fn pop_word(&mut self) -> u16 {
         let low = self.pop_byte();
         let high = self.pop_byte();
         u16::from_le_bytes([low, high])
