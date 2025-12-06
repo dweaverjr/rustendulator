@@ -1,7 +1,7 @@
 mod instructions;
 mod opcodes;
 mod registers;
-use self::opcodes::AddressingMode;
+use self::opcodes::OpcodeRecord;
 use self::registers::CpuRegisters;
 use crate::bus::Bus;
 
@@ -10,10 +10,8 @@ pub(crate) struct Cpu {
     cycle_counter: u16,
     bus: *mut Bus,
     total_cycles: u64,
-    current_handler: Option<fn(&mut Cpu)>,
-    current_addressing_mode: AddressingMode,
-    current_page_cross_penalty: bool,
-    current_is_store: bool,
+    opcode_handler: Option<fn(&mut Cpu)>,
+    opcode_record: &'static OpcodeRecord,
     halted: bool,
 }
 
@@ -29,10 +27,8 @@ impl Cpu {
             cycle_counter: 0,
             bus,
             total_cycles: 0,
-            current_handler: None,
-            current_addressing_mode: AddressingMode::Implicit,
-            current_page_cross_penalty: false,
-            current_is_store: false,
+            opcode_handler: None,
+            opcode_record: &opcodes::OPCODE_TABLE[0xEA],
             halted: false,
         }
     }
@@ -54,7 +50,7 @@ impl Cpu {
             self.cycle_counter -= 1;
             if self.cycle_counter == 0 {
                 // Even if the instruction incurs cycle penalties to then burn down, the instruction will still only execute once via Option
-                if let Some(handler) = self.current_handler.take() {
+                if let Some(handler) = self.opcode_handler.take() {
                     handler(self); // Execute the intruction handler
                 }
             }
@@ -62,13 +58,11 @@ impl Cpu {
         }
 
         let opcode = self.fetch_byte();
-        let opcode_record = &opcodes::OPCODE_TABLE[opcode as usize];
+        self.opcode_record = &opcodes::OPCODE_TABLE[opcode as usize];
         // Burn one cycle for the fetch and decode
-        self.cycle_counter = opcode_record.cycles - 1;
+        self.cycle_counter = self.opcode_record.cycles - 1;
         // Store the handler for later when cycle counter is exhausted
-        self.current_handler = Some(opcode_record.handler);
-        self.current_addressing_mode = opcode_record.addressing_mode;
-        self.current_page_cross_penalty = opcode_record.page_cross_penalty;
+        self.opcode_handler = Some(self.opcode_record.handler);
     }
 
     fn fetch_byte(&mut self) -> u8 {

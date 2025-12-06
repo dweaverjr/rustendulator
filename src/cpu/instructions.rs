@@ -55,7 +55,7 @@ impl Cpu {
                 let final_address = base.wrapping_add(self.registers.index_x as u16);
 
                 // Reads add a cycle on page cross; stores don't (handled in opcode table)
-                if !self.current_is_store
+                if !self.opcode_record.is_store
                     && (registers::PAGE_MASK & base) != (registers::PAGE_MASK & final_address)
                 {
                     let wrong_address =
@@ -72,7 +72,7 @@ impl Cpu {
                 let final_address = base.wrapping_add(self.registers.index_y as u16);
 
                 // Reads add a cycle on page cross; stores don't (handled in opcode table)
-                if !self.current_is_store
+                if !self.opcode_record.is_store
                     && (registers::PAGE_MASK & base) != (registers::PAGE_MASK & final_address)
                 {
                     let wrong_address =
@@ -113,7 +113,7 @@ impl Cpu {
                 let final_address = base.wrapping_add(self.registers.index_y as u16);
 
                 // Reads add a cycle on page cross; stores don't (handled in opcode table)
-                if !self.current_is_store
+                if !self.opcode_record.is_store
                     && (registers::PAGE_MASK & base) != (registers::PAGE_MASK & final_address)
                 {
                     let wrong_address =
@@ -190,7 +190,7 @@ impl Cpu {
     }
 
     pub(super) fn ora(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.opcode_record.addressing_mode);
         let value = self.read_bus(address);
 
         self.registers.accumulator |= value;
@@ -202,7 +202,7 @@ impl Cpu {
     }
 
     pub(super) fn slo(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.opcode_record.addressing_mode);
         let value = self.read_bus(address);
         // Dummy write
         self.write_bus(address, value);
@@ -217,17 +217,17 @@ impl Cpu {
     }
 
     pub(super) fn nop(&mut self) {
-        let _ = self.get_operand_address(self.current_addressing_mode);
+        let _ = self.get_operand_address(self.opcode_record.addressing_mode);
     }
 
     pub(super) fn asl(&mut self) {
-        if self.current_addressing_mode == AddressingMode::Accumulator {
+        if self.opcode_record.addressing_mode == AddressingMode::Accumulator {
             let value = self.registers.accumulator;
             let carry = value & 0x80 != 0;
             self.registers.accumulator = value << 1;
             self.update_carry_zero_negative(self.registers.accumulator, carry);
         } else {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.opcode_record.addressing_mode);
             let value = self.read_bus(address);
             // Dummy write
             self.write_bus(address, value);
@@ -243,7 +243,7 @@ impl Cpu {
     }
 
     pub(super) fn anc(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.opcode_record.addressing_mode);
         let value = self.read_bus(address);
 
         self.registers.accumulator &= value;
@@ -274,7 +274,7 @@ impl Cpu {
     }
 
     pub(super) fn and(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.opcode_record.addressing_mode);
         let value = self.read_bus(address);
 
         self.registers.accumulator &= value;
@@ -282,7 +282,7 @@ impl Cpu {
     }
 
     pub(super) fn rla(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.opcode_record.addressing_mode);
         let value = self.read_bus(address);
         // Dummy write
         self.write_bus(address, value);
@@ -298,7 +298,7 @@ impl Cpu {
     }
 
     pub(super) fn bit(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.opcode_record.addressing_mode);
         let value = self.read_bus(address);
 
         self.registers.set_negative(value & 0x80 != 0);
@@ -308,13 +308,13 @@ impl Cpu {
     }
 
     pub(super) fn rol(&mut self) {
-        if self.current_addressing_mode == AddressingMode::Accumulator {
+        if self.opcode_record.addressing_mode == AddressingMode::Accumulator {
             let value = self.registers.accumulator;
             let new_carry = value & 0x80 != 0;
             self.registers.accumulator = (value << 1) | (self.registers.carry() as u8);
             self.update_carry_zero_negative(self.registers.accumulator, new_carry);
         } else {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.opcode_record.addressing_mode);
             let value = self.read_bus(address);
 
             // Dummy write
@@ -349,7 +349,7 @@ impl Cpu {
     }
 
     pub(super) fn eor(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.opcode_record.addressing_mode);
         let value = self.read_bus(address);
 
         self.registers.accumulator ^= value;
@@ -357,7 +357,7 @@ impl Cpu {
     }
 
     pub(super) fn sre(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.opcode_record.addressing_mode);
         let value = self.read_bus(address);
 
         // Dummy write
@@ -372,13 +372,13 @@ impl Cpu {
     }
 
     pub(super) fn lsr(&mut self) {
-        if self.current_addressing_mode == AddressingMode::Accumulator {
+        if self.opcode_record.addressing_mode == AddressingMode::Accumulator {
             let value = self.registers.accumulator;
             let carry = value & 0x01 != 0;
             self.registers.accumulator = value >> 1;
             self.update_carry_zero_negative(self.registers.accumulator, carry);
         } else {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.opcode_record.addressing_mode);
             let value = self.read_bus(address);
 
             // Dummy write
@@ -396,7 +396,7 @@ impl Cpu {
     }
 
     pub(super) fn alr(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.opcode_record.addressing_mode);
         let value = self.read_bus(address);
 
         let anded = self.registers.accumulator & value;
@@ -407,7 +407,7 @@ impl Cpu {
     }
 
     pub(super) fn jmp(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.opcode_record.addressing_mode);
         self.registers.program_counter = address;
     }
 
@@ -426,7 +426,7 @@ impl Cpu {
     }
 
     pub(super) fn adc(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.opcode_record.addressing_mode);
         let value = self.read_bus(address);
 
         let carry_in = self.registers.carry() as u16;
@@ -446,7 +446,7 @@ impl Cpu {
     }
 
     pub(super) fn rra(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.opcode_record.addressing_mode);
         let value = self.read_bus(address);
 
         // Dummy write
@@ -479,13 +479,13 @@ impl Cpu {
     }
 
     pub(super) fn ror(&mut self) {
-        if self.current_addressing_mode == AddressingMode::Accumulator {
+        if self.opcode_record.addressing_mode == AddressingMode::Accumulator {
             let value = self.registers.accumulator;
             let new_carry = value & 0x01 != 0;
             self.registers.accumulator = (value >> 1) | ((self.registers.carry() as u8) << 7);
             self.update_carry_zero_negative(self.registers.accumulator, new_carry);
         } else {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.opcode_record.addressing_mode);
             let value = self.read_bus(address);
 
             // Dummy write
@@ -504,7 +504,7 @@ impl Cpu {
     }
 
     pub(super) fn arr(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.opcode_record.addressing_mode);
         let value = self.read_bus(address);
 
         // AND
@@ -532,22 +532,22 @@ impl Cpu {
     }
 
     pub(super) fn sta(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.opcode_record.addressing_mode);
         self.write_bus(address, self.registers.accumulator);
     }
 
     pub(super) fn sax(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.opcode_record.addressing_mode);
         self.write_bus(address, self.registers.accumulator & self.registers.index_x);
     }
 
     pub(super) fn sty(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.opcode_record.addressing_mode);
         self.write_bus(address, self.registers.index_y);
     }
 
     pub(super) fn stx(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.opcode_record.addressing_mode);
         self.write_bus(address, self.registers.index_x);
     }
 
@@ -562,7 +562,7 @@ impl Cpu {
     }
 
     pub(super) fn xaa(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.opcode_record.addressing_mode);
         let value = self.read_bus(address);
         self.registers.accumulator =
             (self.registers.accumulator | 0xEE) & self.registers.index_x & value;
@@ -574,7 +574,7 @@ impl Cpu {
     }
 
     pub(super) fn ahx(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.opcode_record.addressing_mode);
         let high_byte = ((address >> 8) as u8).wrapping_add(1);
         let value = self.registers.accumulator & self.registers.index_x & high_byte;
         self.write_bus(address, value);
@@ -590,7 +590,7 @@ impl Cpu {
     }
 
     pub(super) fn tas(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.opcode_record.addressing_mode);
         self.registers.stack_pointer = self.registers.accumulator & self.registers.index_x;
         let high_byte = ((address >> 8) as u8).wrapping_add(1);
         let value = self.registers.stack_pointer & high_byte;
@@ -598,42 +598,42 @@ impl Cpu {
     }
 
     pub(super) fn shy(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.opcode_record.addressing_mode);
         let high_byte = ((address >> 8) as u8).wrapping_add(1);
         let value = self.registers.index_y & high_byte;
         self.write_bus(address, value);
     }
 
     pub(super) fn shx(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.opcode_record.addressing_mode);
         let high_byte = ((address >> 8) as u8).wrapping_add(1);
         let value = self.registers.index_x & high_byte;
         self.write_bus(address, value);
     }
 
     pub(super) fn ldy(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.opcode_record.addressing_mode);
         let value = self.read_bus(address);
         self.registers.index_y = value;
         self.update_zero_and_negative(value);
     }
 
     pub(super) fn lda(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.opcode_record.addressing_mode);
         let value = self.read_bus(address);
         self.registers.accumulator = value;
         self.update_zero_and_negative(value);
     }
 
     pub(super) fn ldx(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.opcode_record.addressing_mode);
         let value = self.read_bus(address);
         self.registers.index_x = value;
         self.update_zero_and_negative(value);
     }
 
     pub(super) fn lax(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.opcode_record.addressing_mode);
         let value = self.read_bus(address);
         self.registers.accumulator = value;
         self.registers.index_x = value;
@@ -664,7 +664,7 @@ impl Cpu {
     }
 
     pub(super) fn las(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.opcode_record.addressing_mode);
         let value = self.read_bus(address);
         let result = value & self.registers.stack_pointer;
         self.registers.accumulator = result;
@@ -674,7 +674,7 @@ impl Cpu {
     }
 
     pub(super) fn cpy(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.opcode_record.addressing_mode);
         let value = self.read_bus(address);
         let result = self.registers.index_y.wrapping_sub(value);
         self.registers.set_carry(self.registers.index_y >= value);
@@ -682,7 +682,7 @@ impl Cpu {
     }
 
     pub(super) fn cmp(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.opcode_record.addressing_mode);
         let value = self.read_bus(address);
         let result = self.registers.accumulator.wrapping_sub(value);
         self.registers
@@ -691,7 +691,7 @@ impl Cpu {
     }
 
     pub(super) fn dcp(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.opcode_record.addressing_mode);
         let value = self.read_bus(address);
         // Dummy write
         self.write_bus(address, value);
@@ -706,7 +706,7 @@ impl Cpu {
     }
 
     pub(super) fn dec(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.opcode_record.addressing_mode);
         let value = self.read_bus(address);
 
         // Dummy write
@@ -728,7 +728,7 @@ impl Cpu {
     }
 
     pub(super) fn axs(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.opcode_record.addressing_mode);
         let value = self.read_bus(address);
         let anded = self.registers.accumulator & self.registers.index_x;
         let result = anded.wrapping_sub(value);
@@ -746,7 +746,7 @@ impl Cpu {
     }
 
     pub(super) fn cpx(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.opcode_record.addressing_mode);
         let value = self.read_bus(address);
         let result = self.registers.index_x.wrapping_sub(value);
         self.registers.set_carry(self.registers.index_x >= value);
@@ -754,7 +754,7 @@ impl Cpu {
     }
 
     pub(super) fn sbc(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.opcode_record.addressing_mode);
         let value = self.read_bus(address);
 
         let inverted = value ^ 0xFF;
@@ -776,7 +776,7 @@ impl Cpu {
     }
 
     pub(super) fn isc(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.opcode_record.addressing_mode);
         let value = self.read_bus(address);
         // Dummy write
         self.write_bus(address, value);
@@ -798,7 +798,7 @@ impl Cpu {
     }
 
     pub(super) fn inc(&mut self) {
-        let address = self.get_operand_address(self.current_addressing_mode);
+        let address = self.get_operand_address(self.opcode_record.addressing_mode);
         let value = self.read_bus(address);
 
         // Dummy write
