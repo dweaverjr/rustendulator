@@ -53,15 +53,19 @@ impl Cpu {
             AddressingMode::AbsoluteX => {
                 let base = self.fetch_word();
                 let final_address = base.wrapping_add(self.registers.index_x as u16);
+                let crossed =
+                    (registers::PAGE_MASK & base) != (registers::PAGE_MASK & final_address);
 
-                // Reads add a cycle on page cross; stores don't (handled in opcode table)
-                if !self.opcode_record.is_store
-                    && (registers::PAGE_MASK & base) != (registers::PAGE_MASK & final_address)
-                {
+                // Stores always do dummy read; reads only on page cross
+                if self.opcode_record.is_store || crossed {
                     let wrong_address =
                         (registers::PAGE_MASK & base) | (registers::OFFSET_MASK & final_address);
                     self.read_bus(wrong_address);
-                    self.cycle_counter += 1;
+
+                    // Only add cycle penalty for reads (stores have fixed cycles in opcode table)
+                    if !self.opcode_record.is_store {
+                        self.cycle_counter += 1;
+                    }
                 }
 
                 final_address
@@ -70,15 +74,19 @@ impl Cpu {
             AddressingMode::AbsoluteY => {
                 let base = self.fetch_word();
                 let final_address = base.wrapping_add(self.registers.index_y as u16);
+                let crossed =
+                    (registers::PAGE_MASK & base) != (registers::PAGE_MASK & final_address);
 
-                // Reads add a cycle on page cross; stores don't (handled in opcode table)
-                if !self.opcode_record.is_store
-                    && (registers::PAGE_MASK & base) != (registers::PAGE_MASK & final_address)
-                {
+                // Stores always do dummy read; reads only on page cross
+                if self.opcode_record.is_store || crossed {
                     let wrong_address =
                         (registers::PAGE_MASK & base) | (registers::OFFSET_MASK & final_address);
                     self.read_bus(wrong_address);
-                    self.cycle_counter += 1;
+
+                    // Only add cycle penalty for reads (stores have fixed cycles in opcode table)
+                    if !self.opcode_record.is_store {
+                        self.cycle_counter += 1;
+                    }
                 }
 
                 final_address
@@ -111,15 +119,19 @@ impl Cpu {
                 let high = self.read_bus(pointer.wrapping_add(1) as u16);
                 let base = u16::from_le_bytes([low, high]);
                 let final_address = base.wrapping_add(self.registers.index_y as u16);
+                let crossed =
+                    (registers::PAGE_MASK & base) != (registers::PAGE_MASK & final_address);
 
-                // Reads add a cycle on page cross; stores don't (handled in opcode table)
-                if !self.opcode_record.is_store
-                    && (registers::PAGE_MASK & base) != (registers::PAGE_MASK & final_address)
-                {
+                // Stores always do dummy read; reads only on page cross
+                if self.opcode_record.is_store || crossed {
                     let wrong_address =
                         (registers::PAGE_MASK & base) | (registers::OFFSET_MASK & final_address);
                     self.read_bus(wrong_address);
-                    self.cycle_counter += 1;
+
+                    // Only add cycle penalty for reads (stores have fixed cycles in opcode table)
+                    if !self.opcode_record.is_store {
+                        self.cycle_counter += 1;
+                    }
                 }
 
                 final_address
@@ -227,7 +239,7 @@ impl Cpu {
             self.registers.accumulator = value << 1;
             self.update_carry_zero_negative(self.registers.accumulator, carry);
         } else {
-        let address = self.get_operand_address(self.opcode_record.addressing_mode);
+            let address = self.get_operand_address(self.opcode_record.addressing_mode);
             let value = self.read_bus(address);
             // Dummy write
             self.write_bus(address, value);
@@ -314,7 +326,7 @@ impl Cpu {
             self.registers.accumulator = (value << 1) | (self.registers.carry() as u8);
             self.update_carry_zero_negative(self.registers.accumulator, new_carry);
         } else {
-        let address = self.get_operand_address(self.opcode_record.addressing_mode);
+            let address = self.get_operand_address(self.opcode_record.addressing_mode);
             let value = self.read_bus(address);
 
             // Dummy write
@@ -378,7 +390,7 @@ impl Cpu {
             self.registers.accumulator = value >> 1;
             self.update_carry_zero_negative(self.registers.accumulator, carry);
         } else {
-        let address = self.get_operand_address(self.opcode_record.addressing_mode);
+            let address = self.get_operand_address(self.opcode_record.addressing_mode);
             let value = self.read_bus(address);
 
             // Dummy write
@@ -485,7 +497,7 @@ impl Cpu {
             self.registers.accumulator = (value >> 1) | ((self.registers.carry() as u8) << 7);
             self.update_carry_zero_negative(self.registers.accumulator, new_carry);
         } else {
-        let address = self.get_operand_address(self.opcode_record.addressing_mode);
+            let address = self.get_operand_address(self.opcode_record.addressing_mode);
             let value = self.read_bus(address);
 
             // Dummy write
