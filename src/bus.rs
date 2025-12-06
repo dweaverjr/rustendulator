@@ -32,6 +32,19 @@ impl Bus {
         }
     }
 
+    fn set_nmi(&mut self, level: bool) {
+        if level && !self.nmi_line {
+            self.nmi_edge_detected = true;
+        }
+        self.nmi_line = level;
+    }
+
+    pub(crate) fn take_nmi_edge(&mut self) -> bool {
+        let edge = self.nmi_edge_detected;
+        self.nmi_edge_detected = false;
+        edge
+    }
+
     fn set_irq_apu_frame(&mut self, asserted: bool) {
         self.irq_apu_frame = asserted;
     }
@@ -44,7 +57,7 @@ impl Bus {
         self.irq_mapper = asserted;
     }
 
-    fn irq_asserted(&self) -> bool {
+    pub(crate) fn irq_asserted(&self) -> bool {
         self.irq_apu_frame || self.irq_apu_dmc || self.irq_mapper
     }
 
