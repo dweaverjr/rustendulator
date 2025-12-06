@@ -108,6 +108,15 @@ impl Cpu {
             return;
         }
 
+        if self.bus_mut().take_nmi_edge() {
+            self.execute_nmi();
+            return;
+        }
+        if self.bus_mut().irq_asserted() && !self.registers.interrupt_disable() {
+            self.execute_irq();
+            return;
+        }
+
         let opcode = self.fetch_byte();
         self.opcode_record = &opcodes::OPCODE_TABLE[opcode as usize];
         // Burn one cycle for the fetch and decode
@@ -128,19 +137,26 @@ impl Cpu {
         u16::from_le_bytes([low, high])
     }
 
-    fn read_bus(&self, address: u16) -> u8 {
-        unsafe { (*self.bus).read(address) }
+    #[inline]
+    fn bus_mut(&mut self) -> &mut Bus {
+        // Safety: This is the only pointer to bus for the CPU. The bus owns all other NES components
+        unsafe { &mut *self.bus }
     }
 
+    #[inline]
+    fn read_bus(&mut self, address: u16) -> u8 {
+        self.bus_mut().read(address)
+    }
+
+    #[inline]
     fn write_bus(&mut self, address: u16, value: u8) {
         // Single exception trap for OAMDMA write, never reaches the bus but keeps everything else simple
         if address == 0x4014 {
             self.perform_oamdma_write(value);
             return;
         }
-        unsafe {
-            (*self.bus).write(address, value);
-        }
+
+        self.bus_mut().write(address, value);
     }
 
     fn perform_oamdma_write(&mut self, page: u8) {
