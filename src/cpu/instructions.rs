@@ -63,7 +63,7 @@ impl Cpu {
                     self.read_bus(wrong_address);
 
                     // Only add cycle penalty for reads (stores have fixed cycles in opcode table)
-                    if !self.opcode_record.is_store {
+                    if !self.opcode_record.is_store && self.opcode_record.page_cross_penalty {
                         self.cycle_counter += 1;
                     }
                 }
@@ -84,7 +84,7 @@ impl Cpu {
                     self.read_bus(wrong_address);
 
                     // Only add cycle penalty for reads (stores have fixed cycles in opcode table)
-                    if !self.opcode_record.is_store {
+                    if !self.opcode_record.is_store && self.opcode_record.page_cross_penalty {
                         self.cycle_counter += 1;
                     }
                 }
@@ -129,7 +129,7 @@ impl Cpu {
                     self.read_bus(wrong_address);
 
                     // Only add cycle penalty for reads (stores have fixed cycles in opcode table)
-                    if !self.opcode_record.is_store {
+                    if !self.opcode_record.is_store && self.opcode_record.page_cross_penalty {
                         self.cycle_counter += 1;
                     }
                 }
