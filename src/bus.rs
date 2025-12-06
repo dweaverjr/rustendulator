@@ -4,7 +4,18 @@ use crate::ppu::Ppu;
 pub(crate) struct Bus {
     ram: Ram,
     ppu: Ppu,
+
+    // For open bus behavior (for now)
     last_read: u8,
+
+    // NMI line
+    nmi_line: bool,
+    nmi_edge_detected: bool,
+
+    // IRQ sources
+    irq_apu_frame: bool,
+    irq_apu_dmc: bool,
+    irq_mapper: bool,
 }
 
 impl Bus {
@@ -13,7 +24,28 @@ impl Bus {
             ram: Ram::new(),
             ppu: Ppu::new(),
             last_read: 0,
+            nmi_line: false,
+            nmi_edge_detected: false,
+            irq_apu_frame: false,
+            irq_apu_dmc: false,
+            irq_mapper: false,
         }
+    }
+
+    fn set_irq_apu_frame(&mut self, asserted: bool) {
+        self.irq_apu_frame = asserted;
+    }
+
+    fn set_irq_apu_dmc(&mut self, asserted: bool) {
+        self.irq_apu_dmc = asserted;
+    }
+
+    fn set_irq_mapper(&mut self, asserted: bool) {
+        self.irq_mapper = asserted;
+    }
+
+    fn irq_asserted(&self) -> bool {
+        self.irq_apu_frame || self.irq_apu_dmc || self.irq_mapper
     }
 
     pub(crate) fn ppu_stub_tick(&self) {
