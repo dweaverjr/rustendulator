@@ -13,6 +13,10 @@ pub(crate) struct Cpu {
     opcode_handler: Option<fn(&mut Cpu)>,
     opcode_record: &'static OpcodeRecord,
     halted: bool,
+    // Latch for handling the flag delay of CLI and PLP since we're not tracking IRQ per cycle
+    interrupt_disable_clear_delay: bool,
+    // Latch for handling the flag delay of SEI since we're not tracking IRQ per cycle
+    interrupt_disable_set_delay: bool,
 }
 
 impl Cpu {
@@ -30,6 +34,8 @@ impl Cpu {
             opcode_handler: None,
             opcode_record: &opcodes::OPCODE_TABLE[0xEA],
             halted: false,
+            interrupt_disable_clear_delay: false,
+            interrupt_disable_set_delay: false,
         }
     }
 
@@ -81,6 +87,8 @@ impl Cpu {
         self.registers.set_interrupt_disable(true);
         self.halted = false;
         self.opcode_handler = None;
+        self.interrupt_disable_clear_delay = false;
+        self.interrupt_disable_set_delay = false;
         self.load_reset_vector();
     }
 
@@ -91,7 +99,7 @@ impl Cpu {
             return;
         }
 
-        // TODO: Add logic for handling IRQ delay for CLI and SEI
+        // TODO: Add logic for handling BRK hijacking and branching exceptions
 
         // Approach is, exhaust cycles until the last, then execute
         // Mid instruction quirks are easier to deal with
@@ -112,7 +120,19 @@ impl Cpu {
             self.execute_nmi();
             return;
         }
-        if self.bus_mut().irq_asserted() && !self.registers.interrupt_disable() {
+
+        // Defer normal handling once for CLI/PHP if previous I was true
+        if self.interrupt_disable_clear_delay {
+            self.interrupt_disable_clear_delay = false;
+
+        // Defer normal handling once for SEI if previous I was false
+        } else if self.interrupt_disable_set_delay {
+            self.interrupt_disable_set_delay = false;
+            if self.bus_mut().irq_asserted() {
+                self.execute_irq();
+                return;
+            }
+        } else if self.bus_mut().irq_asserted() && !self.registers.interrupt_disable() {
             self.execute_irq();
             return;
         }

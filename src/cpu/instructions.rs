@@ -426,6 +426,7 @@ impl Cpu {
     }
 
     pub(super) fn cli(&mut self) {
+        self.interrupt_disable_clear_delay = self.registers.interrupt_disable();
         self.registers.set_interrupt_disable(false);
     }
 
@@ -538,6 +539,7 @@ impl Cpu {
     }
 
     pub(super) fn sei(&mut self) {
+        self.interrupt_disable_set_delay = !self.registers.interrupt_disable();
         self.registers.set_interrupt_disable(true);
     }
 
