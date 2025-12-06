@@ -47,7 +47,8 @@ const fn opcode(
 }
 
 pub(super) const OPCODE_TABLE: [OpcodeRecord; 256] = [
-    /* 0x00 */ opcode("BRK", Cpu::brk, 7, AddressingMode::Implicit, false, false),
+    // Note for BRK: Cycles are 7, but to simplify hijacking quirk it is set to 4 here, and then 3 is always added to burn after it checks for hijack
+    /* 0x00 */ opcode("BRK", Cpu::brk, 4, AddressingMode::Implicit, false, false),
     /* 0x01 */ opcode("ORA", Cpu::ora, 6, AddressingMode::IndirectX, false, false),
     /* 0x02 */ opcode("KIL", Cpu::kil, 2, AddressingMode::Implicit, false, false),
     /* 0x03 */ opcode("SLO", Cpu::slo, 8, AddressingMode::IndirectX, false, false),

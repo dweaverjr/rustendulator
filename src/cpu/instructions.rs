@@ -188,7 +188,7 @@ impl Cpu {
     // Instruction handlers
     pub(super) fn brk(&mut self) {
         // To get PC + 2 including original BRK fetch
-        self.registers.increment_pc();
+        self.fetch_byte();
 
         self.push_word(self.registers.program_counter);
 
@@ -196,7 +196,16 @@ impl Cpu {
 
         self.registers.set_interrupt_disable(true);
 
-        self.load_irq_vector();
+        // Since the base cycle in the opcode table is only 4,
+        // this will run on the 4th cycle and check for hijacking
+        if self.bus_mut().take_nmi_edge() {
+            self.load_nmi_vector();
+        } else {
+            self.load_irq_vector();
+        }
+
+        // Then we add the remainder of the cycle burn
+        self.cycle_counter += 3;
     }
 
     pub(super) fn ora(&mut self) {

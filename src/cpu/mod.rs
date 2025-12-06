@@ -17,6 +17,8 @@ pub(crate) struct Cpu {
     interrupt_disable_clear_delay: bool,
     // Latch for handling the flag delay of SEI since we're not tracking IRQ per cycle
     interrupt_disable_set_delay: bool,
+    // Latch for checking for NMI hijack during IRQ handling
+    irq_vector_pending: bool,
 }
 
 impl Cpu {
@@ -36,6 +38,7 @@ impl Cpu {
             halted: false,
             interrupt_disable_clear_delay: false,
             interrupt_disable_set_delay: false,
+            irq_vector_pending: false,
         }
     }
 
@@ -74,7 +77,8 @@ impl Cpu {
         self.push_word(self.registers.program_counter);
         self.push_byte(self.registers.status_for_stack_push(false));
         self.registers.set_interrupt_disable(true);
-        self.load_irq_vector();
+        // Vector loading will be done in the main loop to check for hijacking
+        self.irq_vector_pending = true;
         self.cycle_counter = 7;
     }
 
@@ -89,6 +93,7 @@ impl Cpu {
         self.opcode_handler = None;
         self.interrupt_disable_clear_delay = false;
         self.interrupt_disable_set_delay = false;
+        self.irq_vector_pending = false;
         self.load_reset_vector();
     }
 
@@ -99,14 +104,21 @@ impl Cpu {
             return;
         }
 
-        // TODO: Add logic for handling BRK hijacking and branching exceptions
+        // Future: Add logic for branching instructions with interrupt handling
 
         // Approach is, exhaust cycles until the last, then execute
         // Mid instruction quirks are easier to deal with
         // This also allows halting for DMA transfer using the same counter
         if self.cycle_counter > 0 {
-            // TODO: track interrupts for BRK etc.
             self.cycle_counter -= 1;
+            if self.irq_vector_pending && self.cycle_counter == 3 {
+                self.irq_vector_pending = false;
+                if self.bus_mut().take_nmi_edge() {
+                    self.load_nmi_vector();
+                } else {
+                    self.load_irq_vector();
+                }
+            }
             if self.cycle_counter == 0 {
                 // Even if the instruction incurs cycle penalties to then burn down, the instruction will still only execute once via Option
                 if let Some(handler) = self.opcode_handler.take() {
