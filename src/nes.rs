@@ -2,14 +2,22 @@ use crate::bus::Bus;
 use crate::cpu::Cpu;
 
 // const MASTER_CLOCK: u32 = 21_477_272; // NTSC
-const TICKS_PER_CPU_TICK: u8 = 12;
-const TICKS_PER_PPU_TICK: u8 = 4;
+const TICKS_PER_CPU_TICK: u8 = 3;
+const TICKS_PER_PPU_TICK: u8 = 1;
+
+enum RunMode {
+    Running,
+    Paused,
+    StepFrame,
+    StepInstruction,
+}
 
 pub struct Nes {
     bus: Bus,
     cpu: Cpu,
     cpu_tick_counter: u8,
     ppu_tick_counter: u8,
+    run_mode: RunMode,
 }
 
 impl Nes {
@@ -23,7 +31,16 @@ impl Nes {
             cpu: cpu,
             cpu_tick_counter: 0,
             ppu_tick_counter: 0,
+            run_mode: RunMode::Paused,
         }
+    }
+
+    pub fn power_on(&mut self) {
+        self.cpu.power_on();
+    }
+
+    pub fn reset(&mut self) {
+        self.cpu.reset();
     }
 
     fn tick(&mut self) {
