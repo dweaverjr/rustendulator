@@ -52,6 +52,26 @@ impl Cpu {
         self.registers.program_counter = u16::from_le_bytes([low, high]);
     }
 
+    fn execute_nmi(&mut self) {
+        self.read_bus(self.registers.program_counter); // Dummy read
+        self.read_bus(self.registers.program_counter); // Dummy read
+        self.push_word(self.registers.program_counter);
+        self.push_byte(self.registers.status_for_stack_push(false));
+        self.registers.set_interrupt_disable(true);
+        self.load_nmi_vector();
+        self.cycle_counter = 7;
+    }
+
+    fn execute_irq(&mut self) {
+        self.read_bus(self.registers.program_counter); // Dummy read
+        self.read_bus(self.registers.program_counter); // Dummy read
+        self.push_word(self.registers.program_counter);
+        self.push_byte(self.registers.status_for_stack_push(false));
+        self.registers.set_interrupt_disable(true);
+        self.load_irq_vector();
+        self.cycle_counter = 7;
+    }
+
     pub fn power_on(&mut self) {
         self.load_reset_vector();
     }
