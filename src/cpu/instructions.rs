@@ -347,8 +347,18 @@ impl Cpu {
     }
 
     pub(super) fn plp(&mut self) {
+        let was_set = self.registers.interrupt_disable();
         let status_value = self.pop_byte();
         self.registers.set_status_from_stack_pop(status_value);
+        let is_set = self.registers.interrupt_disable();
+
+        if was_set && !is_set {
+            // Cleared I: defer IRQ one instruction (like CLI)
+            self.interrupt_disable_clear_delay = true;
+        } else if !was_set && is_set {
+            // Set I: honor old I=0 poll once (like SEI)
+            self.interrupt_disable_set_delay = true;
+        }
     }
 
     pub(super) fn bmi(&mut self) {
