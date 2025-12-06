@@ -196,9 +196,7 @@ impl Cpu {
 
         self.registers.set_interrupt_disable(true);
 
-        let vector_low = self.read_bus(Self::IRQ_VECTOR);
-        let vector_high = self.read_bus(Self::IRQ_VECTOR + 1);
-        self.registers.program_counter = u16::from_le_bytes([vector_low, vector_high]);
+        self.load_irq_vector();
     }
 
     pub(super) fn ora(&mut self) {
