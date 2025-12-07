@@ -1,5 +1,6 @@
 use crate::bus::Bus;
 use crate::cpu::Cpu;
+use crate::cartridge::Cartridge;
 
 // const MASTER_CLOCK: u32 = 21_477_272; // NTSC
 const TICKS_PER_CPU_TICK: u8 = 3;
