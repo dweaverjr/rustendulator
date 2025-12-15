@@ -1,9 +1,8 @@
-mod nes;
-mod cpu;
 mod bus;
-mod memory;
-mod ppu;
 mod cartridge;
+mod cpu;
+mod memory;
+mod nes;
+mod ppu;
 
 pub use nes::Nes;
-
