@@ -11,6 +11,7 @@ enum RunMode {
     Paused,
     StepFrame,
     StepInstruction,
+    StepCycle,
 }
 
 pub struct Nes {
