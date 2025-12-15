@@ -46,6 +46,7 @@ const fn opcode(
     }
 }
 
+#[rustfmt::skip]
 pub(super) const OPCODE_TABLE: [OpcodeRecord; 256] = [
     // Note for BRK: Cycles are 7, but to simplify hijacking quirk it is set to 4 here, and then 3 is always added to burn after it checks for hijack
     /* 0x00 */ opcode("BRK", Cpu::brk, 4, AddressingMode::Implicit, false, false),
