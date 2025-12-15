@@ -1,6 +1,5 @@
 use crate::bus::Bus;
 use crate::cpu::Cpu;
-use crate::cartridge::Cartridge;
 
 // const MASTER_CLOCK: u32 = 21_477_272; // NTSC
 const TICKS_PER_CPU_TICK: u8 = 3;
@@ -35,6 +34,12 @@ impl Nes {
             ppu_tick_counter: 0,
             run_mode: RunMode::Paused,
         }
+    }
+
+    pub fn insert_cartridge(&mut self, data: &[u8]) -> Result<(), &'static str> {
+        self.bus.load_cartridge(data)?;
+
+        Ok(())
     }
 
     pub fn power_on(&mut self) {

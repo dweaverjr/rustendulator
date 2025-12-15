@@ -4,6 +4,8 @@ mod nrom;
 use mapper::{Mapper, Mirroring};
 use nrom::Nrom;
 
+// TODO: Create an error enum
+
 pub struct Cartridge {
     mapper: Box<dyn Mapper>,
     // Currently only handling iNES
@@ -14,8 +16,6 @@ pub struct Cartridge {
     mirroring: Mirroring,
     has_battery: bool,
     has_trainer: bool,
-
-
 }
 
 impl Cartridge {

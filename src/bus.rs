@@ -1,6 +1,6 @@
+use crate::cartridge::Cartridge;
 use crate::memory::Ram;
 use crate::ppu::Ppu;
-use crate::cartridge::Cartridge;
 
 pub(crate) struct Bus {
     ram: Ram,
@@ -34,6 +34,22 @@ impl Bus {
             irq_mapper: false,
             cartridge: None,
         }
+    }
+
+    pub(crate) fn load_cartridge(&mut self, data: &[u8]) -> Result<(), &'static str> {
+        if self.cartridge.is_none() {
+            let cartridge = Cartridge::from_bytes(data)?;
+
+            self.cartridge = Some(cartridge);
+
+            Ok(())
+        } else {
+            Err("Cartridge already loaded")
+        }
+    }
+
+    pub(crate) fn unload_cartridge(&mut self) {
+        self.cartridge = None;
     }
 
     fn set_nmi(&mut self, level: bool) {
