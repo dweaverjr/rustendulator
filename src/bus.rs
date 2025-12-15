@@ -1,5 +1,6 @@
 use crate::memory::Ram;
 use crate::ppu::Ppu;
+use crate::cartridge::Cartridge;
 
 pub(crate) struct Bus {
     ram: Ram,
@@ -16,6 +17,8 @@ pub(crate) struct Bus {
     irq_apu_frame: bool,
     irq_apu_dmc: bool,
     irq_mapper: bool,
+
+    cartridge: Option<Cartridge>,
 }
 
 impl Bus {
@@ -29,6 +32,7 @@ impl Bus {
             irq_apu_frame: false,
             irq_apu_dmc: false,
             irq_mapper: false,
+            cartridge: None,
         }
     }
 
