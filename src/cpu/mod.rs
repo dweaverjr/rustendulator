@@ -177,7 +177,7 @@ impl Cpu {
 
     #[inline]
     fn read_bus(&mut self, address: u16) -> u8 {
-        self.bus_mut().read(address)
+        self.bus_mut().cpu_read(address)
     }
 
     #[inline]
@@ -188,7 +188,7 @@ impl Cpu {
             return;
         }
 
-        self.bus_mut().write(address, value);
+        self.bus_mut().cpu_write(address, value);
     }
 
     fn perform_oamdma_write(&mut self, page: u8) {
