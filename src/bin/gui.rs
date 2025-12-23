@@ -54,9 +54,26 @@ impl Default for Rustendulator {
 
 impl eframe::App for Rustendulator {
     fn update(&mut self, ctx: &egui::Context, _: &mut eframe::Frame) {
+        // Inputs
+
         if ctx.input_mut(|i| i.consume_key(egui::Modifiers::CTRL, egui::Key::Q)) {
             ctx.send_viewport_cmd(egui::ViewportCommand::Close);
         }
+
+        if ctx.input_mut(|i| i.consume_key(egui::Modifiers::CTRL, egui::Key::U)) {
+            self.show_cpu_debug = !self.show_cpu_debug;
+        }
+
+        if ctx.input_mut(|i| i.consume_key(egui::Modifiers::CTRL, egui::Key::P)) {
+            self.show_ppu_debug = !self.show_ppu_debug;
+        }
+
+        if ctx.input_mut(|i| i.consume_key(egui::Modifiers::CTRL, egui::Key::M)) {
+            self.show_memory_debug = !self.show_memory_debug;
+        }
+
+        // Menu
+
         egui::TopBottomPanel::top("menu_bar").show(ctx, |ui| {
             egui::MenuBar::new().ui(ui, |ui| {
                 ui.menu_button("File", |ui| {
@@ -66,6 +83,7 @@ impl eframe::App for Rustendulator {
                     {
                         // Load ROM
                     }
+
                     if ui
                         .add(egui::Button::new("Quit").shortcut_text("Ctrl+Q"))
                         .clicked()
@@ -75,9 +93,53 @@ impl eframe::App for Rustendulator {
                 });
 
                 ui.menu_button("Emulator", |ui| {
-                    ui.checkbox(&mut self.show_cpu_debug, "CPU Debug");
-                    ui.checkbox(&mut self.show_ppu_debug, "PPU Debug");
-                    ui.checkbox(&mut self.show_memory_debug, "Memory Debug");
+                    let label = if self.show_cpu_debug {
+                        "Hide CPU Debug"
+                    } else {
+                        "Show CPU Debug"
+                    };
+                    if ui
+                        .add(
+                            egui::Button::new(label)
+                                .shortcut_text("Ctrl+U")
+                                .wrap_mode(egui::TextWrapMode::Extend),
+                        )
+                        .clicked()
+                    {
+                        self.show_cpu_debug = !self.show_cpu_debug;
+                    };
+
+                    let label = if self.show_ppu_debug {
+                        "Hide PPU Debug"
+                    } else {
+                        "Show PPU Debug"
+                    };
+                    if ui
+                        .add(
+                            egui::Button::new(label)
+                                .shortcut_text("Ctrl+P")
+                                .wrap_mode(egui::TextWrapMode::Extend),
+                        )
+                        .clicked()
+                    {
+                        self.show_ppu_debug = !self.show_ppu_debug;
+                    };
+
+                    let label = if self.show_ppu_debug {
+                        "Hide Memory Debug"
+                    } else {
+                        "Show Memory Debug"
+                    };
+                    if ui
+                        .add(
+                            egui::Button::new(label)
+                                .shortcut_text("Ctrl+P")
+                                .wrap_mode(egui::TextWrapMode::Extend),
+                        )
+                        .clicked()
+                    {
+                        self.show_memory_debug = !self.show_memory_debug;
+                    };
                 })
             });
         });
