@@ -7,6 +7,7 @@
 - **DO NOT** edit code files directly
 - **DO** provide code examples in markdown blocks
 - **DO** reference specific line numbers when discussing code
+- Anything about egui **ALWAYS** lookup the latest information from https://docs.rs/egui/latest/egui/ before replying
 
 ## Expertise
 
