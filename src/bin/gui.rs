@@ -1,14 +1,34 @@
-use eframe::egui;
+use eframe::egui::{self, FontData, FontDefinitions};
 use rustendulator_core::Nes;
+use std::sync::Arc;
+
+fn pixel_font_family() -> egui::FontFamily {
+    egui::FontFamily::Name("pixel".into())
+}
+
+fn load_pixel_font(ctx: &egui::Context) {
+    let mut font = FontDefinitions::default();
+
+    font.font_data.insert(
+        "press_start_2p".to_owned(),
+        Arc::new(FontData::from_static(include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/assets/fonts/PressStart2P-Regular.ttf",
+        )))),
+    );
+
+    font.families
+        .insert(pixel_font_family(), vec!["press_start_2p".to_owned()]);
+
+    ctx.set_fonts(font);
+}
 
 fn main() -> Result<(), eframe::Error> {
     eframe::run_native(
         "Rustendulator",
         eframe::NativeOptions::default(),
         Box::new(|cc| {
-            cc.egui_ctx.style_mut(|style| {
-                style.animation_time = 0.5;
-            });
+            load_pixel_font(&cc.egui_ctx);
             Ok(Box::new(Rustendulator::default()))
         }),
     )
@@ -63,20 +83,25 @@ impl eframe::App for Rustendulator {
         });
 
         egui::SidePanel::left("cpu_debug").show_animated(ctx, self.show_cpu_debug, |ui| {
+            ui.style_mut().override_font_id = Some(egui::FontId::new(12.0, pixel_font_family()));
             ui.heading("CPU Debug");
         });
 
         egui::SidePanel::right("PPU Debug").show_animated(ctx, self.show_ppu_debug, |ui| {
+            ui.style_mut().override_font_id = Some(egui::FontId::new(12.0, pixel_font_family()));
             ui.heading("PPU Debug");
         });
         egui::TopBottomPanel::bottom("Memory Debug").show_animated(
             ctx,
             self.show_memory_debug,
             |ui| {
+                ui.style_mut().override_font_id =
+                    Some(egui::FontId::new(12.0, pixel_font_family()));
                 ui.heading("Memory Debug");
             },
         );
         egui::CentralPanel::default().show(ctx, |ui| {
+            ui.style_mut().override_font_id = Some(egui::FontId::new(12.0, pixel_font_family()));
             ui.heading("NES Display");
         });
     }
