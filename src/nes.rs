@@ -5,7 +5,14 @@ use crate::cpu::Cpu;
 const TICKS_PER_CPU_TICK: u8 = 3;
 const TICKS_PER_PPU_TICK: u8 = 1;
 
-enum RunMode {
+#[derive(PartialEq)]
+enum PowerState {
+    Off,
+    On,
+}
+
+#[derive(Copy, Clone, PartialEq)]
+pub enum RunMode {
     Running,
     Paused,
     StepFrame,
@@ -19,6 +26,7 @@ pub struct Nes {
     cpu_tick_counter: u8,
     ppu_tick_counter: u8,
     run_mode: RunMode,
+    power_state: PowerState,
 }
 
 impl Nes {
@@ -33,6 +41,7 @@ impl Nes {
             cpu_tick_counter: 0,
             ppu_tick_counter: 0,
             run_mode: RunMode::Paused,
+            power_state: PowerState::Off,
         }
     }
 
@@ -44,10 +53,27 @@ impl Nes {
 
     pub fn power_on(&mut self) {
         self.cpu.power_on();
+        self.power_state = PowerState::On;
+    }
+
+    pub fn power_off(&mut self) {
+        self.power_state = PowerState::Off;
+    }
+
+    pub fn is_powered_on(&self) -> bool {
+        self.power_state == PowerState::On
     }
 
     pub fn reset(&mut self) {
         self.cpu.reset();
+    }
+
+    pub fn set_run_mode(&mut self, run_mode: RunMode) {
+        self.run_mode = run_mode;
+    }
+
+    pub fn get_run_mode(&self) -> RunMode {
+        self.run_mode
     }
 
     fn tick(&mut self) {
