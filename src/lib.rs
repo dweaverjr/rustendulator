@@ -5,4 +5,4 @@ mod memory;
 mod nes;
 mod ppu;
 
-pub use nes::Nes;
+pub use nes::{Nes, RunMode};
