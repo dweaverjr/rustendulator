@@ -1,5 +1,7 @@
-use eframe::egui::{self, FontData, FontDefinitions};
-use rustendulator_core::Nes;
+use eframe::egui::{
+    self, FontData, FontDefinitions, containers::menu::SubMenuButton,
+};
+use rustendulator_core::{Nes, RunMode};
 use std::sync::Arc;
 
 fn pixel_font_family() -> egui::FontFamily {
@@ -133,20 +135,84 @@ impl eframe::App for Rustendulator {
                     if ui
                         .add(
                             egui::Button::new(label)
-                                .shortcut_text("Ctrl+P")
+                                .shortcut_text("Ctrl+M")
                                 .wrap_mode(egui::TextWrapMode::Extend),
                         )
                         .clicked()
                     {
                         self.show_memory_debug = !self.show_memory_debug;
                     };
+
+                    SubMenuButton::from_button(
+                        egui::Button::new("Run Mode").right_text(SubMenuButton::RIGHT_ARROW),
+                    )
+                    .ui(ui, |ui| {
+                        let current = self.nes.get_run_mode();
+
+                        if ui
+                            .add(
+                                egui::Button::new("Paused")
+                                    .shortcut_text("Ctrl+W")
+                                    .selected(current == RunMode::Paused),
+                            )
+                            .clicked()
+                        {
+                            self.nes.set_run_mode(RunMode::Paused);
+                        };
+
+                        if ui
+                            .add(
+                                egui::Button::new("Running")
+                                    .shortcut_text("Ctrl+R")
+                                    .selected(current == RunMode::Running),
+                            )
+                            .clicked()
+                        {
+                            self.nes.set_run_mode(RunMode::Running);
+                        };
+
+                        if ui
+                            .add(
+                                egui::Button::new("Step Cycle")
+                                    .shortcut_text("Ctrl+S")
+                                    .selected(current == RunMode::StepCycle),
+                            )
+                            .clicked()
+                        {
+                            self.nes.set_run_mode(RunMode::StepCycle);
+                        };
+
+                        if ui
+                            .add(
+                                egui::Button::new("Step Instruction")
+                                    .shortcut_text("Ctrl+I")
+                                    .selected(current == RunMode::StepInstruction),
+                            )
+                            .clicked()
+                        {
+                            self.nes.set_run_mode(RunMode::StepInstruction);
+                        };
+
+                        if ui
+                            .add(
+                                egui::Button::new("Step Frame")
+                                    .shortcut_text("Ctrl+F")
+                                    .selected(current == RunMode::StepFrame),
+                            )
+                            .clicked()
+                        {
+                            self.nes.set_run_mode(RunMode::StepFrame);
+                        };
+                    })
                 })
             });
         });
 
-        egui::SidePanel::left("cpu_debug").show_animated(ctx, self.show_cpu_debug, |ui| {
+        egui::SidePanel::left("left_panel").show_animated(ctx, self.show_cpu_debug, |ui| {
             ui.style_mut().override_font_id = Some(egui::FontId::new(12.0, pixel_font_family()));
-            ui.heading("CPU Debug");
+            egui::TopBottomPanel::top("emulator_info")
+                .show_inside(ui, |ui| ui.heading("Emulator Info"));
+            egui::TopBottomPanel::bottom("cpu_debug").show_inside(ui, |ui| ui.heading("CPU Debug"))
         });
 
         egui::SidePanel::right("PPU Debug").show_animated(ctx, self.show_ppu_debug, |ui| {
