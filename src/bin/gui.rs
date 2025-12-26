@@ -1,6 +1,4 @@
-use eframe::egui::{
-    self, FontData, FontDefinitions, containers::menu::SubMenuButton,
-};
+use eframe::egui::{self, FontData, FontDefinitions, containers::menu::SubMenuButton};
 use rustendulator_core::{Nes, RunMode};
 use std::sync::Arc;
 
@@ -8,7 +6,11 @@ fn pixel_font_family() -> egui::FontFamily {
     egui::FontFamily::Name("pixel".into())
 }
 
-fn load_pixel_font(ctx: &egui::Context) {
+fn button_font_family() -> egui::FontFamily {
+    egui::FontFamily::Name("button".into())
+}
+
+fn load_fonts(ctx: &egui::Context) {
     let mut font = FontDefinitions::default();
 
     font.font_data.insert(
@@ -19,8 +21,19 @@ fn load_pixel_font(ctx: &egui::Context) {
         )))),
     );
 
+    font.font_data.insert(
+        "venus_rising".to_owned(),
+        Arc::new(FontData::from_static(include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/assets/fonts/venusris.ttf",
+        )))),
+    );
+
     font.families
         .insert(pixel_font_family(), vec!["press_start_2p".to_owned()]);
+
+    font.families
+        .insert(button_font_family(), vec!["venus_rising".to_owned()]);
 
     ctx.set_fonts(font);
 }
@@ -28,9 +41,12 @@ fn load_pixel_font(ctx: &egui::Context) {
 fn main() -> Result<(), eframe::Error> {
     eframe::run_native(
         "Rustendulator",
-        eframe::NativeOptions::default(),
+        eframe::NativeOptions {
+            viewport: egui::ViewportBuilder::default().with_inner_size(egui::vec2(1280.0, 800.0)),
+            ..eframe::NativeOptions::default()
+        },
         Box::new(|cc| {
-            load_pixel_font(&cc.egui_ctx);
+            load_fonts(&cc.egui_ctx);
             Ok(Box::new(Rustendulator::default()))
         }),
     )
@@ -208,12 +224,79 @@ impl eframe::App for Rustendulator {
             });
         });
 
-        egui::SidePanel::left("left_panel").show_animated(ctx, self.show_cpu_debug, |ui| {
-            ui.style_mut().override_font_id = Some(egui::FontId::new(12.0, pixel_font_family()));
-            egui::TopBottomPanel::top("emulator_info")
-                .show_inside(ui, |ui| ui.heading("Emulator Info"));
-            egui::TopBottomPanel::bottom("cpu_debug").show_inside(ui, |ui| ui.heading("CPU Debug"))
-        });
+        egui::SidePanel::left("left_panel")
+            .resizable(false)
+            .min_width(300.0)
+            .show_animated(ctx, self.show_cpu_debug, |ui| {
+                ui.style_mut().override_font_id =
+                    Some(egui::FontId::new(12.0, pixel_font_family()));
+                egui::TopBottomPanel::top("emulator_info").show_inside(ui, |ui| {
+                    ui.heading("Emulator Info");
+                    ui.scope(|ui| {
+                        ui.style_mut().override_font_id =
+                            Some(egui::FontId::new(12.0, button_font_family()));
+                        ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
+                            let on = self.nes.is_powered_on();
+                            let led_color = if on {
+                                egui::Color32::from_rgb(220, 40, 40)
+                            } else {
+                                egui::Color32::from_gray(60)
+                            };
+                            let (rect, _resp) = ui
+                                .allocate_exact_size(egui::vec2(14.0, 14.0), egui::Sense::hover());
+                            ui.painter()
+                                .rect_filled(rect, 0, egui::Color32::from_gray(60));
+                            ui.painter().rect_filled(rect.shrink(2.0), 0.0, led_color);
+
+                            let power_resp = ui
+                                .allocate_ui_with_layout(
+                                    egui::vec2(96.0, 40.0),
+                                    egui::Layout::bottom_up(egui::Align::Center),
+                                    |ui| {
+                                        ui.add_sized(
+                                            egui::vec2(96.0, 40.0),
+                                            egui::Button::new(
+                                                egui::RichText::new("\nPOWER")
+                                                    .color(egui::Color32::from_rgb(220, 40, 40)),
+                                            ),
+                                        )
+                                    },
+                                )
+                                .inner;
+                            if power_resp.clicked() {
+                                if self.nes.is_powered_on() {
+                                    self.nes.power_off();
+                                } else {
+                                    self.nes.power_on();
+                                }
+                            }
+
+                            let reset_resp = ui
+                                .allocate_ui_with_layout(
+                                    egui::vec2(96.0, 40.0),
+                                    egui::Layout::bottom_up(egui::Align::Center),
+                                    |ui| {
+                                        ui.add_sized(
+                                            egui::vec2(96.0, 40.0),
+                                            egui::Button::new(
+                                                egui::RichText::new("\nRESET")
+                                                    .color(egui::Color32::from_rgb(220, 40, 40)),
+                                            ),
+                                        )
+                                    },
+                                )
+                                .inner;
+                            if reset_resp.clicked() {
+                                if self.nes.is_powered_on() {
+                                    self.nes.reset();
+                                }
+                            }
+                        })
+                    })
+                });
+                egui::TopBottomPanel::bottom("cpu_debug")
+                    .show_inside(ui, |ui| ui.heading("CPU Debug"))
+            });
 
         egui::SidePanel::right("PPU Debug").show_animated(ctx, self.show_ppu_debug, |ui| {
             ui.style_mut().override_font_id = Some(egui::FontId::new(12.0, pixel_font_family()));
