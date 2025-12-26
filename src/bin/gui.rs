@@ -54,16 +54,16 @@ fn main() -> Result<(), eframe::Error> {
 
 struct Rustendulator {
     nes: Nes,
-    show_cpu_debug: bool,
-    show_ppu_debug: bool,
+    show_left_panel: bool,
+    show_right_panel: bool,
 }
 
 impl Default for Rustendulator {
     fn default() -> Self {
         Self {
             nes: Nes::new(),
-            show_cpu_debug: true,
-            show_ppu_debug: true,
+            show_left_panel: true,
+            show_right_panel: true,
         }
     }
 }
@@ -77,11 +77,11 @@ impl eframe::App for Rustendulator {
         }
 
         if ctx.input_mut(|i| i.consume_key(egui::Modifiers::CTRL, egui::Key::U)) {
-            self.show_cpu_debug = !self.show_cpu_debug;
+            self.show_left_panel = !self.show_left_panel;
         }
 
         if ctx.input_mut(|i| i.consume_key(egui::Modifiers::CTRL, egui::Key::P)) {
-            self.show_ppu_debug = !self.show_ppu_debug;
+            self.show_right_panel = !self.show_right_panel;
         }
 
         // Menu
@@ -105,7 +105,7 @@ impl eframe::App for Rustendulator {
                 });
 
                 ui.menu_button("Emulator", |ui| {
-                    let label = if self.show_cpu_debug {
+                    let label = if self.show_left_panel {
                         "Hide Left Panel"
                     } else {
                         "Show Left Panel"
@@ -118,13 +118,13 @@ impl eframe::App for Rustendulator {
                         )
                         .clicked()
                     {
-                        self.show_cpu_debug = !self.show_cpu_debug;
+                        self.show_left_panel = !self.show_left_panel;
                     };
 
-                    let label = if self.show_ppu_debug {
-                        "Hide PPU Debug"
+                    let label = if self.show_right_panel {
+                        "Hide Right Panel"
                     } else {
-                        "Show PPU Debug"
+                        "Show Right Panel"
                     };
                     if ui
                         .add(
@@ -134,7 +134,7 @@ impl eframe::App for Rustendulator {
                         )
                         .clicked()
                     {
-                        self.show_ppu_debug = !self.show_ppu_debug;
+                        self.show_right_panel = !self.show_right_panel;
                     };
 
                     SubMenuButton::from_button(
@@ -205,7 +205,7 @@ impl eframe::App for Rustendulator {
         egui::SidePanel::left("left_panel")
             .resizable(false)
             .min_width(300.0)
-            .show_animated(ctx, self.show_cpu_debug, |ui| {
+            .show_animated(ctx, self.show_left_panel, |ui| {
                 ui.style_mut().override_font_id =
                     Some(egui::FontId::new(12.0, pixel_font_family()));
                 egui::TopBottomPanel::top("emulator_info").show_inside(ui, |ui| {
@@ -276,7 +276,7 @@ impl eframe::App for Rustendulator {
                     .show_inside(ui, |ui| ui.heading("CPU Debug"))
             });
 
-        egui::SidePanel::right("PPU Debug").show_animated(ctx, self.show_ppu_debug, |ui| {
+        egui::SidePanel::right("PPU Debug").show_animated(ctx, self.show_right_panel, |ui| {
             ui.style_mut().override_font_id = Some(egui::FontId::new(12.0, pixel_font_family()));
             ui.heading("PPU Debug");
         });
