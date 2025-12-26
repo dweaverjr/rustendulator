@@ -1,4 +1,6 @@
-use eframe::egui::{self, FontData, FontDefinitions, containers::menu::SubMenuButton};
+use eframe::egui::{
+    self, FontData, FontDefinitions, Response, Ui, containers::menu::SubMenuButton,
+};
 use rustendulator_core::{Nes, RunMode};
 use std::sync::Arc;
 
@@ -68,6 +70,39 @@ impl Default for Rustendulator {
     }
 }
 
+// Visual Components
+impl Rustendulator {
+    fn power_led(&self, ui: &mut Ui, on: bool) {
+        let led_color = if on {
+            egui::Color32::from_rgb(220, 40, 40)
+        } else {
+            egui::Color32::from_gray(60)
+        };
+        let (rect, _resp) = ui.allocate_exact_size(egui::vec2(14.0, 14.0), egui::Sense::hover());
+        ui.painter()
+            .rect_filled(rect, 0, egui::Color32::from_gray(60));
+        ui.painter().rect_filled(rect.shrink(2.0), 0.0, led_color);
+    }
+
+    fn gui_button(&mut self, ui: &mut Ui, text: &str) -> Response {
+        ui.allocate_ui_with_layout(
+            egui::vec2(96.0, 40.0),
+            egui::Layout::bottom_up(egui::Align::Center),
+            |ui| {
+                ui.add_sized(
+                    egui::vec2(96.0, 40.0),
+                    egui::Button::new(
+                        egui::RichText::new(format!("\n{}", text))
+                            .color(egui::Color32::from_rgb(220, 40, 40)),
+                    ),
+                )
+            },
+        )
+        .inner
+    }
+}
+
+// Main GUI Code
 impl eframe::App for Rustendulator {
     fn update(&mut self, ctx: &egui::Context, _: &mut eframe::Frame) {
         // Inputs
@@ -207,75 +242,50 @@ impl eframe::App for Rustendulator {
             .min_width(300.0)
             .show_animated(ctx, self.show_left_panel, |ui| {
                 ui.style_mut().override_font_id =
-                    Some(egui::FontId::new(12.0, pixel_font_family()));
-                egui::TopBottomPanel::top("emulator_info").show_inside(ui, |ui| {
-                    ui.heading("Emulator Info");
+                    Some(egui::FontId::new(14.0, pixel_font_family()));
+                ui.heading("Emulator Info");
+                ui.vertical(|ui| {
                     ui.scope(|ui| {
                         ui.style_mut().override_font_id =
                             Some(egui::FontId::new(12.0, button_font_family()));
-                        ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
+                        ui.allocate_ui_with_layout(egui::Vec2 { x: 0.0, y: 100.0 }, egui::Layout::left_to_right(egui::Align::Center), |ui| {
                             let on = self.nes.is_powered_on();
-                            let led_color = if on {
-                                egui::Color32::from_rgb(220, 40, 40)
-                            } else {
-                                egui::Color32::from_gray(60)
-                            };
-                            let (rect, _resp) = ui
-                                .allocate_exact_size(egui::vec2(14.0, 14.0), egui::Sense::hover());
-                            ui.painter()
-                                .rect_filled(rect, 0, egui::Color32::from_gray(60));
-                            ui.painter().rect_filled(rect.shrink(2.0), 0.0, led_color);
 
-                            let power_resp = ui
-                                .allocate_ui_with_layout(
-                                    egui::vec2(96.0, 40.0),
-                                    egui::Layout::bottom_up(egui::Align::Center),
-                                    |ui| {
-                                        ui.add_sized(
-                                            egui::vec2(96.0, 40.0),
-                                            egui::Button::new(
-                                                egui::RichText::new("\nPOWER")
-                                                    .color(egui::Color32::from_rgb(220, 40, 40)),
-                                            ),
-                                        )
-                                    },
-                                )
-                                .inner;
-                            if power_resp.clicked() {
-                                if self.nes.is_powered_on() {
+                            self.power_led(ui, on);
+
+                            let power = self.gui_button(ui, "POWER");
+
+                            if power.clicked() {
+                                if on {
                                     self.nes.power_off();
                                 } else {
                                     self.nes.power_on();
                                 }
                             }
 
-                            let reset_resp = ui
-                                .allocate_ui_with_layout(
-                                    egui::vec2(96.0, 40.0),
-                                    egui::Layout::bottom_up(egui::Align::Center),
-                                    |ui| {
-                                        ui.add_sized(
-                                            egui::vec2(96.0, 40.0),
-                                            egui::Button::new(
-                                                egui::RichText::new("\nRESET")
-                                                    .color(egui::Color32::from_rgb(220, 40, 40)),
-                                            ),
-                                        )
-                                    },
-                                )
-                                .inner;
-                            if reset_resp.clicked() {
-                                if self.nes.is_powered_on() {
+                            let reset = self.gui_button(ui, "RESET");
+
+                            if reset.clicked() && on {
+                                {
                                     self.nes.reset();
                                 }
                             }
                         })
-                    })
+                    });
+                    ui.label(format!(
+                        "Run mode: {}",
+                        match self.nes.get_run_mode() {
+                            RunMode::Paused => "Paused",
+                            RunMode::Running => "Running",
+                            RunMode::StepCycle => "Step Cycle",
+                            RunMode::StepFrame => "Step Frame",
+                            RunMode::StepInstruction => "Step Instruction",
+                        }
+                    ));
+                    ui.separator();
+                    ui.label("CPU Info")
                 });
-                egui::TopBottomPanel::bottom("cpu_debug")
-                    .show_inside(ui, |ui| ui.heading("CPU Debug"))
             });
-
         egui::SidePanel::right("PPU Debug").show_animated(ctx, self.show_right_panel, |ui| {
             ui.style_mut().override_font_id = Some(egui::FontId::new(12.0, pixel_font_family()));
             ui.heading("PPU Debug");
