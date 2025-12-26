@@ -56,7 +56,6 @@ struct Rustendulator {
     nes: Nes,
     show_cpu_debug: bool,
     show_ppu_debug: bool,
-    show_memory_debug: bool,
 }
 
 impl Default for Rustendulator {
@@ -65,7 +64,6 @@ impl Default for Rustendulator {
             nes: Nes::new(),
             show_cpu_debug: true,
             show_ppu_debug: true,
-            show_memory_debug: true,
         }
     }
 }
@@ -84,10 +82,6 @@ impl eframe::App for Rustendulator {
 
         if ctx.input_mut(|i| i.consume_key(egui::Modifiers::CTRL, egui::Key::P)) {
             self.show_ppu_debug = !self.show_ppu_debug;
-        }
-
-        if ctx.input_mut(|i| i.consume_key(egui::Modifiers::CTRL, egui::Key::M)) {
-            self.show_memory_debug = !self.show_memory_debug;
         }
 
         // Menu
@@ -112,9 +106,9 @@ impl eframe::App for Rustendulator {
 
                 ui.menu_button("Emulator", |ui| {
                     let label = if self.show_cpu_debug {
-                        "Hide CPU Debug"
+                        "Hide Left Panel"
                     } else {
-                        "Show CPU Debug"
+                        "Show Left Panel"
                     };
                     if ui
                         .add(
@@ -141,22 +135,6 @@ impl eframe::App for Rustendulator {
                         .clicked()
                     {
                         self.show_ppu_debug = !self.show_ppu_debug;
-                    };
-
-                    let label = if self.show_ppu_debug {
-                        "Hide Memory Debug"
-                    } else {
-                        "Show Memory Debug"
-                    };
-                    if ui
-                        .add(
-                            egui::Button::new(label)
-                                .shortcut_text("Ctrl+M")
-                                .wrap_mode(egui::TextWrapMode::Extend),
-                        )
-                        .clicked()
-                    {
-                        self.show_memory_debug = !self.show_memory_debug;
                     };
 
                     SubMenuButton::from_button(
@@ -302,15 +280,6 @@ impl eframe::App for Rustendulator {
             ui.style_mut().override_font_id = Some(egui::FontId::new(12.0, pixel_font_family()));
             ui.heading("PPU Debug");
         });
-        egui::TopBottomPanel::bottom("Memory Debug").show_animated(
-            ctx,
-            self.show_memory_debug,
-            |ui| {
-                ui.style_mut().override_font_id =
-                    Some(egui::FontId::new(12.0, pixel_font_family()));
-                ui.heading("Memory Debug");
-            },
-        );
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.style_mut().override_font_id = Some(egui::FontId::new(12.0, pixel_font_family()));
             ui.heading("NES Display");
