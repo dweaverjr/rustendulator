@@ -92,7 +92,7 @@ impl Rustendulator {
                 ui.add_sized(
                     egui::vec2(96.0, 40.0),
                     egui::Button::new(
-                        egui::RichText::new(format!("\n{}", text))
+                        egui::RichText::new(format!("{}", text))
                             .color(egui::Color32::from_rgb(220, 40, 40)),
                     ),
                 )
@@ -248,29 +248,66 @@ impl eframe::App for Rustendulator {
                     ui.scope(|ui| {
                         ui.style_mut().override_font_id =
                             Some(egui::FontId::new(12.0, button_font_family()));
-                        ui.allocate_ui_with_layout(egui::Vec2 { x: 0.0, y: 100.0 }, egui::Layout::left_to_right(egui::Align::Center), |ui| {
-                            let on = self.nes.is_powered_on();
+                        ui.allocate_ui_with_layout(
+                            egui::Vec2 { x: 0.0, y: 50.0 },
+                            egui::Layout::left_to_right(egui::Align::Center),
+                            |ui| {
+                                let on = self.nes.is_powered_on();
 
-                            self.power_led(ui, on);
+                                self.power_led(ui, on);
 
-                            let power = self.gui_button(ui, "POWER");
+                                let power = self.gui_button(ui, "\nPOWER");
 
-                            if power.clicked() {
-                                if on {
-                                    self.nes.power_off();
-                                } else {
-                                    self.nes.power_on();
+                                if power.clicked() {
+                                    if on {
+                                        self.nes.power_off();
+                                    } else {
+                                        self.nes.power_on();
+                                    }
                                 }
-                            }
 
-                            let reset = self.gui_button(ui, "RESET");
+                                let reset = self.gui_button(ui, "\nRESET");
 
-                            if reset.clicked() && on {
-                                {
-                                    self.nes.reset();
+                                if reset.clicked() && on {
+                                    {
+                                        self.nes.reset();
+                                    }
                                 }
-                            }
-                        })
+                            },
+                        );
+                        ui.allocate_ui_with_layout(
+                            egui::Vec2 { x: 0.0, y: 50.0 },
+                            egui::Layout::left_to_right(egui::Align::Center),
+                            |ui| {
+                                let spacer = 14.0 + ui.spacing().item_spacing.x;
+
+                                ui.add_space(spacer);
+
+                                let run = self.gui_button(ui, "RUN |\nPAUSE");
+
+                                if run.clicked() {
+                                    if self.nes.get_run_mode() != RunMode::Paused {
+                                        self.nes.set_run_mode(RunMode::Paused);
+                                    } else {
+                                        self.nes.set_run_mode(RunMode::Running);
+                                    }
+                                }
+
+                                let mode = self.gui_button(ui, "CYCLE\nMODE");
+
+                                if mode.clicked() {
+                                    match self.nes.get_run_mode() {
+                                        RunMode::StepCycle => {
+                                            self.nes.set_run_mode(RunMode::StepFrame)
+                                        }
+                                        RunMode::StepFrame => {
+                                            self.nes.set_run_mode(RunMode::StepInstruction)
+                                        }
+                                        _ => self.nes.set_run_mode(RunMode::StepCycle),
+                                    }
+                                }
+                            },
+                        );
                     });
                     ui.label(format!(
                         "Run mode: {}",
@@ -279,7 +316,7 @@ impl eframe::App for Rustendulator {
                             RunMode::Running => "Running",
                             RunMode::StepCycle => "Step Cycle",
                             RunMode::StepFrame => "Step Frame",
-                            RunMode::StepInstruction => "Step Instruction",
+                            RunMode::StepInstruction => "Step Instr",
                         }
                     ));
                     ui.separator();
